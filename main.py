@@ -39,10 +39,7 @@ def build_and_run():
 
     # 3) ingest some mixed items
     mixed_items = [
-        "私は朝型で、午前中が最も生産的です",
-        "先週末に山登りをしてきました",
-        "論理的な議論が好きで問題解決が得意です",
-        "昨日は同僚と新しいカフェを試した",
+
     ]
     for t in mixed_items:
         res = classifier.classify(t)
@@ -53,14 +50,29 @@ def build_and_run():
         else:
             storage.save_experience_data(t, metadata)
 
+    
+    def answer_run(input_text:str):
+        question_query:str = input_text
+        similar = storage.search_similar(question_query, category="personality", top_k=3)
+        context_texts = "\n\n".join([f"- {d['text']} (score={d['score']:.3f})" for d in similar])
+        # LM Studio LLM
+        lm = LMStudioClient()
+        rag_answer = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
+        print("RAG answer:\n", rag_answer)
     # 4) sample search + RAG generation
-    question_query = "朝の生産性を高めるコツは？"
-    similar = storage.search_similar(question_query, category="personality", top_k=3)
-    context_texts = "\n\n".join([f"- {d['text']} (score={d['score']:.3f})" for d in similar])
-    # LM Studio LLM
-    lm = LMStudioClient()
-    rag_answer = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
-    print("RAG answer:\n", rag_answer)
+    
+    while True:
+        answer_run(input("質問をどうぞ（終了するには Ctrl+C を押してください）: "))
+        
+        # question_query = "朝の生産性を高めるコツは？"
+        # similar = storage.search_similar(question_query, category="personality", top_k=3)
+        # context_texts = "\n\n".join([f"- {d['text']} (score={d['score']:.3f})" for d in similar])
+        # # LM Studio LLM
+        # lm = LMStudioClient()
+        # rag_answer = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
+        # print("RAG answer:\n", rag_answer)
+
+
 
 if __name__ == "__main__":
     build_and_run()

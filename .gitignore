@@ -1,3 +1,5 @@
 models
 .venv
-__pycache__
+__pycache__/
+lm_studio_rag/__pycache__
+faiss_metadata.json
