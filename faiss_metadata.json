@@ -1,0 +1,62 @@
+{
+  "1": {
+    "text": "私は朝型で、午前中が最も生産的です",
+    "meta": {
+      "classifier": {
+        "label": "personality",
+        "score": 0.95,
+        "method": "ensemble",
+        "reason": "heuristic:no_strong_marker + embedding_prob:0.608",
+        "timestamp": "2025-09-08T07:03:50Z"
+      },
+      "source": "user_upload",
+      "saved_at": "2025-09-08T07:03:50Z",
+      "category": "personality"
+    }
+  },
+  "2": {
+    "text": "先週末に山登りをしてきました",
+    "meta": {
+      "classifier": {
+        "label": "personality",
+        "score": 0.95,
+        "method": "ensemble",
+        "reason": "heuristic:no_strong_marker + embedding_prob:0.622",
+        "timestamp": "2025-09-08T07:03:50Z"
+      },
+      "source": "user_upload",
+      "saved_at": "2025-09-08T07:03:50Z",
+      "category": "personality"
+    }
+  },
+  "3": {
+    "text": "論理的な議論が好きで問題解決が得意です",
+    "meta": {
+      "classifier": {
+        "label": "personality",
+        "score": 0.95,
+        "method": "ensemble",
+        "reason": "heuristic:no_strong_marker + embedding_prob:0.982",
+        "timestamp": "2025-09-08T07:03:51Z"
+      },
+      "source": "user_upload",
+      "saved_at": "2025-09-08T07:03:51Z",
+      "category": "personality"
+    }
+  },
+  "4": {
+    "text": "昨日は同僚と新しいカフェを試した",
+    "meta": {
+      "classifier": {
+        "label": "experience",
+        "score": 0.8142208176696241,
+        "method": "embedding",
+        "reason": "heuristic:no_strong_marker vs embedding_prob:0.186",
+        "timestamp": "2025-09-08T07:03:51Z"
+      },
+      "source": "user_upload",
+      "saved_at": "2025-09-08T07:03:51Z",
+      "category": "experience"
+    }
+  }
+}

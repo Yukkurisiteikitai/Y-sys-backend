@@ -55,11 +55,11 @@ def build_and_run():
 
     # 4) sample search + RAG generation
     question_query = "朝の生産性を高めるコツは？"
-    similar = storage.search_similar(question_query category="personality", top_k=3)
+    similar = storage.search_similar(question_query, category="personality", top_k=3)
     context_texts = "\n\n".join([f"- {d['text']} (score={d['score']:.3f})" for d in similar])
     # LM Studio LLM
     lm = LMStudioClient()
-    rag_answer = lm.generate_response(question_query context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
+    rag_answer = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
     print("RAG answer:\n", rag_answer)
 
 if __name__ == "__main__":
