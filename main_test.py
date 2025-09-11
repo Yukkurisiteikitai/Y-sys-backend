@@ -95,27 +95,8 @@ def build_and_run():
         """
         output_code = arh_abstract.artechture_base(storage=storage,field_info_input=feild_info_input)
         print(f"RAG:->{output_code.emotion_estimation}\nGAR:{output_code.think_estimation}")
-        # question_query:str = input_text
-        # similar = storage.search_similar(question_query, category="personality", top_k=3)
-        # context_texts = "\n\n".join([f"- {d['text']} (score={d['score']:.3f})" for d in similar])
-        # # LM Studio LLM
-        # lm = LMStudioClient()
-        # rag_answer = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
-        # print("RAG answer:\n", rag_answer)
-    # 4) sample search + RAG generation
-    
-    # while True:
     answer_run()
         
-        # question_query = "朝の生産性を高めるコツは？"
-        # similar = storage.search_similar(question_query, category="personality", top_k=3)
-        # context_texts = "\n\n".join([f"- {d['text']} (score={d['score']:.3f})" for d in similar])
-        # # LM Studio LLM
-        # lm = LMStudioClient()
-        # rag_answer = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
-        # print("RAG answer:\n", rag_answer)
-
-
 
 if __name__ == "__main__":
     build_and_run()
