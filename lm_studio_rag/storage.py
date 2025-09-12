@@ -19,17 +19,29 @@ class RAGStorage:
      - id, text, metadata (timestamp, label, score, source)
     """
 
-    def __init__(self, embedding_model_name: str = EMBEDDING_MODEL_NAME, dim: int = None, vector_db_type: str = VECTOR_DB_TYPE):
+    def __init__(self, embedding_model_name: str = EMBEDDING_MODEL_NAME, dim: int = None, vector_db_type: str = VECTOR_DB_TYPE, USE_MEMORY_RUN:bool = False):
         self.dim = dim
         self.embedding_model = SentenceTransformer(embedding_model_name)
         self.vector_db_type = vector_db_type
         if vector_db_type == "chroma":
             try:
                 import chromadb
-                from chromadb.config import Settings
-                self.client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=CHROMA_PERSIST_DIR))
-                self.collection = self.client.get_or_create_collection(name="rag_collection")
-                logger.info("ChromaDB initialized at %s", CHROMA_PERSIST_DIR)
+                if USE_MEMORY_RUN:                    
+                    from chromadb.config import Settings
+                    self.client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=CHROMA_PERSIST_DIR))
+                    self.collection = self.client.get_or_create_collection(name="rag_collection")
+                    logger.info("ChromaDB initialized at %s", CHROMA_PERSIST_DIR)
+                else:
+                    # データベースディレクトリが存在するかどうかで、新規作成かロードかを判断しログに出力
+                    if not os.path.exists(CHROMA_PERSIST_DIR):
+                        logger.info("ChromaDB persistence directory not found at '%s'. A new database will be created.", CHROMA_PERSIST_DIR)
+                    else:
+                        logger.info("Loading ChromaDB from existing directory: '%s'", CHROMA_PERSIST_DIR)
+
+                    # PersistentClientを使用すると、指定したパスのデータの読み込みと自動保存が行われます。
+                    self.client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+                    self.collection = self.client.get_or_create_collection(name="rag_collection")
+                    logger.info("ChromaDB initialized successfully.")
             except Exception as e:
                 logger.warning("Chroma init failed: %s; falling back to faiss", e)
                 self._init_faiss(dim or 384)
@@ -60,6 +72,7 @@ class RAGStorage:
         # chroma expects ids, metadatas, documents, embeddings optional
         embs = self.embedding_model.encode(texts, show_progress_bar=False)
         self.collection.add(documents=texts, metadatas=metadatas, ids=ids, embeddings=embs)
+        # PersistentClientを使用しているため、add操作は自動的に永続化されます。
 
     def _upsert_faiss(self, texts: List[str], metadatas: List[Dict[str, Any]]):
         embs = self.embedding_model.encode(texts, show_progress_bar=False)
@@ -136,8 +149,9 @@ class RAGStorage:
             return docs
 
     def persist_chroma(self):
+        """
+        [DEPRECATED] With PersistentClient, data is persisted automatically.
+        This method is kept for backward compatibility but does nothing.
+        """
         if self.vector_db_type == "chroma":
-            try:
-                self.client.persist()
-            except Exception as e:
-                logger.warning("Chroma persist failed: %s", e)
+            logger.info("Using PersistentClient. Data is automatically persisted, no need to call persist().")
