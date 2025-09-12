@@ -3,3 +3,4 @@ models
 __pycache__/
 lm_studio_rag/__pycache__
 faiss_metadata.json
+.DS_Store

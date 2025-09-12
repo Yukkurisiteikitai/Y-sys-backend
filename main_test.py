@@ -15,7 +15,9 @@ import os
 # import architecture.abstract_recognitio.base as arh_abstract
 from architecture.abstract_recognition import base as arh_abstract
 
-# sample data
+
+# データ作成について
+## sample data
 PERSONALITY_SAMPLES = [
     "私は内向的な性格で、静かな環境を好みます",
     "コーヒーよりも紅茶派です",
@@ -37,7 +39,7 @@ def build_and_run():
     })
 
     # 2) initialize storage
-    storage = RAGStorage()
+    storage = RAGStorage(USE_MEMORY_RUN=True)
 
     # 3) ingest some mixed items
     mixed_items = [
@@ -56,7 +58,7 @@ def build_and_run():
     def answer_run():
         # if input_text == "test":
         feild_info_input:str = """
-            {
+{
   "field_info": {
     "field_env": {
       "time": "evening",
@@ -96,7 +98,7 @@ def build_and_run():
         output_code = arh_abstract.artechture_base(storage=storage,field_info_input=feild_info_input)
         print(f"RAG:->{output_code.emotion_estimation}\nGAR:{output_code.think_estimation}")
     answer_run()
-        
+
 
 if __name__ == "__main__":
     build_and_run()
