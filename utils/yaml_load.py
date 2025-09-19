@@ -2,8 +2,8 @@ from yaml import safe_load
 
 config_path = "configs/meta_question.yaml"
 
-def load_yaml(path):
-    with open(config_path,"r",encoding="utf-8")as f:
+def load_yaml(path:str =config_path):
+    with open(path,"r",encoding="utf-8")as f:
         _data = safe_load(f)
         return _data
 

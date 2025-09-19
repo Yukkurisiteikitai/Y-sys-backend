@@ -40,8 +40,6 @@ def artechture_base(storage: RAGStorage, field_info_input: str) -> Optional[scha
     # result_schama.think_estimation = think_result
     
     return result_schama
-    
-    
 
 
 # def generate_response(self:LMStudioClient, query: str, context: str, model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 512) -> str:

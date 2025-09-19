@@ -14,6 +14,7 @@ from lm_studio_rag.utils import now_iso
 import os
 # import architecture.abstract_recognitio.base as arh_abstract
 from architecture.abstract_recognition import base as arh_abstract
+from architecture.concrete_understanding.base import ConcreteUnderstanding
 
 
 # データ作成について
@@ -95,10 +96,56 @@ def build_and_run():
   }
 }
         """
-        output_code = arh_abstract.artechture_base(storage=storage,field_info_input=feild_info_input)
+        output_code = arh_abstract.architecture_base(storage=storage,field_info_input=feild_info_input)
         print(f"RAG:->{output_code.emotion_estimation}\nGAR:{output_code.think_estimation}")
     answer_run()
 
+def test_thought_experiment():
+    """
+    Tests the thought experiment flow.
+    """
+    print("\n--- Running Thought Experiment Test ---")
+    
+    # 1. Initialize storage and the understanding process
+    storage = RAGStorage(USE_MEMORY_RUN=True)
+    understanding_process = ConcreteUnderstanding(storage)
+    
+    # 2. Define dummy user inputs for the test
+    scenario_id = "THOUGHT_EXP_001"
+    direct_answer = "スイッチを切り替える"
+    real_experience = "昔、多数決で友人の意見を押し切ってしまったことがある。後で少し後悔した。"
+    
+    # 3. Run the thought experiment
+    thought_episode, experience_episode = understanding_process.start_thought_experiment(
+        scenario_id=scenario_id,
+        user_direct_answer=direct_answer,
+        user_real_experience=real_experience
+    )
+    
+    # 4. Assertions to verify the results
+    print("Verifying results...")
+    
+    # Check that both episodes were created
+    assert thought_episode is not None, "Thought episode should be created"
+    assert experience_episode is not None, "Experience episode should be created"
+    
+    # Check content types
+    assert thought_episode.content_type == "value_articulation", f"Incorrect content_type for thought_episode: {thought_episode.content_type}"
+    assert experience_episode.content_type == "storytelling_personal_event", f"Incorrect content_type for experience_episode: {experience_episode.content_type}"
+    
+    # Check text content
+    assert thought_episode.text_content == direct_answer
+    assert experience_episode.text_content == real_experience
+    
+    # Check the link between episodes
+    assert experience_episode.related_episode_ids is not None, "Experience episode should be related to the thought episode"
+    assert len(experience_episode.related_episode_ids) == 1, "There should be one related episode"
+    assert experience_episode.related_episode_ids[0].episode_id == thought_episode.episode_id, "The related ID does not match"
+    assert experience_episode.related_episode_ids[0].relationship_type == "is_response_to"
+
+    print("All assertions passed!")
+    print("--- Thought Experiment Test Finished ---\n")
 
 if __name__ == "__main__":
-    build_and_run()
+    # build_and_run()
+    test_thought_experiment()
