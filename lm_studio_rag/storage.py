@@ -27,10 +27,9 @@ class RAGStorage:
             try:
                 import chromadb
                 if USE_MEMORY_RUN:                    
-                    from chromadb.config import Settings
-                    self.client = chromadb.Client(Settings(chroma_db_impl="duckdb+parquet", persist_directory=CHROMA_PERSIST_DIR))
+                    self.client = chromadb.EphemeralClient()
                     self.collection = self.client.get_or_create_collection(name="rag_collection")
-                    logger.info("ChromaDB initialized at %s", CHROMA_PERSIST_DIR)
+                    logger.info("ChromaDB initialized in-memory (ephemeral).")
                 else:
                     # データベースディレクトリが存在するかどうかで、新規作成かロードかを判断しログに出力
                     if not os.path.exists(CHROMA_PERSIST_DIR):
