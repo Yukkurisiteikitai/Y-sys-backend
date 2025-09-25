@@ -107,8 +107,9 @@ class RAGStorage:
         q_emb = self.embedding_model.encode([query], show_progress_bar=False)
         if self.vector_db_type == "chroma":
             # Chroma query
-            results = self.collection.query(query_embeddings=q_emb, n_results=top_k, include=["metadatas","documents","distances","ids"])
+            results = self.collection.query(query_embeddings=q_emb, n_results=top_k, include=["metadatas","documents","distances"])
             docs = []
+            # `ids` は `include` に指定しなくてもデフォルトで返されるため、後続のコードは変更不要
             for i in range(len(results["ids"])):
                 # results return lists per field
                 for j in range(len(results["ids"][i])):

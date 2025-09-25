@@ -20,13 +20,13 @@ class EmotionAnalysis(BaseModel):
 
 class NamedEntity(BaseModel):
     """抽出された固有表現"""
-    text: str = Field(..., description="固有表現のテキスト")
-    type: str = Field(..., description="固有表現の種類 (PERSON, LOCATION, etc.)")
+    text: str = Field(None, description="固有表現のテキスト")
+    type: str = Field(None, description="固有表現の種類 (PERSON, LOCATION, etc.)")
 
 class Summarization(BaseModel):
     """AIによるエピソードの要約"""
-    short_summary: str = Field(..., description="短い要約文")
-    key_points: List[str] = Field(..., description="主要なポイントのリスト")
+    short_summary: str = Field(None, description="短い要約文")
+    key_points: List[str] = Field(["...cute"], description="主要なポイントのリスト")
 
 class DevelopmentalStageEstimation(BaseModel):
     """AIが正規化した出来事の時期と推定発達段階"""
@@ -54,30 +54,30 @@ class TraumaEventDetails(BaseModel):
 
 class LinkedToPersonDataEntry(BaseModel):
     """Person Dataとの連携情報"""
-    target_person_data_key: str = Field(..., description="Person Data内のトップレベルのキー名")
-    target_entry_id: str = Field(..., description="そのキー内の具体的なエントリのID")
-    relationship_type: str = Field(..., description="関係性の種類 (is_evidence_for, etc.)")
+    target_person_data_key: str = Field(None, description="Person Data内のトップレベルのキー名")
+    target_entry_id: str = Field(None, description="そのキー内の具体的なエントリのID")
+    relationship_type: str = Field(None, description="関係性の種類 (is_evidence_for, etc.)")
 
 class RelatedEpisode(BaseModel):
     """他のエピソードとの連携情報"""
-    episode_id: str = Field(..., description="関連する他のエピソードのID")
-    relationship_type: str = Field(..., description="関係性の種類 (is_response_to, etc.)")
+    episode_id: str = Field(None, description="関連する他のエピソードのID")
+    relationship_type: str = Field(None, description="関係性の種類 (is_response_to, etc.)")
 
 class EpisodeData(BaseModel):
     """
     ユーザーとの具体的な対話や出来事の記録（エピソード）を保持するデータモデル。
     YourselfLMの記憶の最小単位となる。
     """
-    episode_id: str = Field(..., description="エピソードの一意な識別子 (UUIDなど)")
-    thread_id: str = Field(..., description="このエピソードが属する対話スレッドのID")
-    timestamp: datetime = Field(..., description="このエピソードが記録された正確な日時 (ISO 8601形式)")
-    sequence_in_thread: int = Field(..., description="スレッド内での発言・記録順序")
+    episode_id: str = Field(None, description="エピソードの一意な識別子 (UUIDなど)")
+    thread_id: str = Field(None, description="このエピソードが属する対話スレッドのID")
+    timestamp: datetime = Field(None, description="このエピソードが記録された正確な日時 (ISO 8601形式)")
+    sequence_in_thread: int = Field(0, description="スレッド内での発言・記録順序")
 
-    source_type: str = Field(..., description="このエピソードの源泉 (user_free_dialogue, etc.)")
-    author: str = Field(..., description="発言者 (user, ai_persona_standard_analyst, etc.)")
+    source_type: str = Field(None, description="このエピソードの源泉 (user_free_dialogue, etc.)")
+    author: str = Field(None, description="発言者 (user, ai_persona_standard_analyst, etc.)")
 
-    content_type: str = Field(..., description="エピソード内容の種別 (factual_statement, etc.)")
-    text_content: str = Field(..., description="ユーザーの元発言、AIの応答、あるいはシステムメッセージのテキスト内容")
+    content_type: str = Field(None, description="エピソード内容の種別 (factual_statement, etc.)")
+    text_content: str = Field(None, description="ユーザーの元発言、AIの応答、あるいはシステムメッセージのテキスト内容")
 
     # --- AIによる自動解析情報 ---
     language: Optional[str] = Field(None, description="テキストの言語コード (ja, en, etc.)")
@@ -94,8 +94,8 @@ class EpisodeData(BaseModel):
     # --- ユーザーによる評価・状態管理 ---
     user_importance_rating: Optional[str] = Field(None, description="ユーザーによるこのエピソードの重要度評価 (very_high, high, etc.)")
     user_labels_or_tags: Optional[List[str]] = Field(None, description="ユーザーが付与した自由なラベルやタグ")
-    status: str = Field(..., description="エピソードの状態 (active, archived_by_user, etc.)")
-    sensitivity_level: str = Field(..., description="このエピソードの機微度 (low, medium, high, etc.)")
+    status: str = Field(None, description="エピソードの状態 (active, archived_by_user, etc.)")
+    sensitivity_level: str = Field(None, description="このエピソードの機微度 (low, medium, high, etc.)")
 
     # --- データ連携 ---
     linked_to_person_data_entries: Optional[List[LinkedToPersonDataEntry]] = Field(None, description="このエピソードが影響を与えた、または根拠となるPerson Data内のエントリIDリスト")

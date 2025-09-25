@@ -146,6 +146,75 @@ def test_thought_experiment():
     print("All assertions passed!")
     print("--- Thought Experiment Test Finished ---\n")
 
+from architecture.response_generation.response_generator import ResponseGenerator
+from architecture.response_generation.schema_response import UserResponse
+
+def test_response_generation():
+    """
+    Tests the end-to-end user response generation process.
+    """
+    print("\n--- Running User Response Generation Test ---")
+
+    # 1. Initialize storage and LMStudioClient
+    storage = RAGStorage(USE_MEMORY_RUN=True)
+    lm_client = LMStudioClient() # Assuming LMStudioClient can be initialized without specific API keys for testing
+
+    # 2. Instantiate ResponseGenerator
+    response_generator = ResponseGenerator(storage, lm_client)
+
+    # 3. Provide a sample field_info_input
+    field_info_input = """
+{
+  "field_info": {
+    "field_env": {
+      "time": "morning",
+      "weather": "sunny",
+      "location": "park"
+    },
+    "human_env": [
+      {
+        "nam": "Child A",
+        "feel": "happy",
+        "state": "playing on swings"
+      },
+      {
+        "nam": "Parent B",
+        "feel": "relaxed",
+        "state": "watching Child A"
+      }
+    ]
+  }
+}
+    """
+
+    # 4. Generate user response
+    user_response: Optional[UserResponse] = response_generator.generate_user_response(field_info_input)
+
+    # 5. Assertions to verify the results
+    print("Verifying results...")
+
+    assert user_response is not None, "UserResponse should be generated"
+    assert isinstance(user_response, UserResponse), "Returned object should be an instance of UserResponse"
+    assert user_response.abstract_understanding is not None, "Abstract understanding should be populated"
+    assert user_response.abstract_understanding.emotion_estimation is not None, "Emotion estimation should be populated"
+    assert user_response.abstract_understanding.think_estimation is not None, "Think estimation should be populated"
+    assert user_response.concrete_understanding_summary is not None, "Concrete understanding summary should be populated"
+    assert user_response.inferred_decision is not None, "Inferred decision should be populated"
+    assert user_response.inferred_action is not None, "Inferred action should be populated"
+    assert user_response.generated_response_text is not None, "Generated response text should be populated"
+
+    print("Abstract Understanding (Emotion):", user_response.abstract_understanding.emotion_estimation)
+    print("Abstract Understanding (Thought):", user_response.abstract_understanding.think_estimation)
+    print("Concrete Understanding Summary:", user_response.concrete_understanding_summary)
+    print("Inferred Decision:", user_response.inferred_decision)
+    print("Inferred Action:", user_response.inferred_action)
+    print("Generated Response Text:", user_response.generated_response_text)
+
+    print("All assertions passed for user response generation!")
+    print("--- User Response Generation Test Finished ---\n")
+
+
 if __name__ == "__main__":
     # build_and_run()
     test_thought_experiment()
+    test_response_generation()
