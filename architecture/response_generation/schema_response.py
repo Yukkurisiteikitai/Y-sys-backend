@@ -17,4 +17,7 @@ class UserResponse(BaseModel):
     concrete_understanding_summary: str = Field(None, description="具体的な状況理解の要約（時間、場所、人間環境などを含む）")
     inferred_decision: str = Field(None, description="具体的理解に基づいてAIが行うと推論される意思決定")
     inferred_action: str = Field(None, description="意思決定に基づいてAIが行うと推論される行動")
-    generated_response_text: str = Field(None, description="ユーザーに提示される最終的な応答テキスト")
+    thought_process: Dict[str, str] = Field(None, description="応答生成に至る思考プロセス")
+    nuance: str = Field(None, description="応答の際の感情的なニュアンス")
+    dialogue: str = Field(None, description="ユーザーへの実際のセリフ")
+    behavior: str = Field(None, description="セリフに伴う具体的な行動")

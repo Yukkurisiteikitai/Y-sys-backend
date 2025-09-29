@@ -5,3 +5,5 @@ lm_studio_rag/__pycache__
 faiss_metadata.json
 .DS_Store
 .pyc
+chroma_db
+.sqlite3

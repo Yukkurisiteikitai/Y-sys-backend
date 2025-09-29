@@ -39,8 +39,6 @@ class ResponseGenerator:
 
         # 2. 具体的理解の開始 (ConcreteUnderstandingクラスを使用)
         print("具体的理解を開始中...")
-        # ConcreteUnderstandingのstart_inferenceはabstract_recognition_responseを返すため、
-        # ここではその内部で管理されるfield_infoとexperienceを利用する
         self.concrete_understanding_process.start_inference(field_info_input)
         
         # 具体的理解の要約を生成
@@ -59,15 +57,15 @@ class ResponseGenerator:
         print(f"推論された意思決定: {inferred_decision}")
         print(f"推論された行動: {inferred_action}")
 
-        # 4. 最終的な応答テキストの生成
-        print("最終的な応答テキストを生成中...")
-        generated_response_text = self._generate_final_response_text(
+        # 4. 構造化された応答の生成
+        print("構造化された応答を生成中...")
+        structured_response = self._generate_structured_response(
             abstract_understanding,
             concrete_understanding_summary,
             inferred_decision,
             inferred_action
         )
-        print(f"生成された応答テキスト: {generated_response_text}")
+        print(f"生成された構造化応答: {structured_response}")
 
         # 5. UserResponseオブジェクトの構築
         try:
@@ -76,7 +74,10 @@ class ResponseGenerator:
                 concrete_understanding_summary=concrete_understanding_summary,
                 inferred_decision=inferred_decision,
                 inferred_action=inferred_action,
-                generated_response_text=generated_response_text
+                thought_process=structured_response.get('thought_process', {}),
+                nuance=structured_response.get('nuance', ''),
+                dialogue=structured_response.get('dialogue', ''),
+                behavior=structured_response.get('behavior', '')
             )
             print("--- ユーザー応答生成プロセス完了 ---")
             return user_response
@@ -135,33 +136,82 @@ class ResponseGenerator:
         
         return decision, action
 
-    def _generate_final_response_text(self,
+    def _generate_structured_response(self,
         abstract_understanding: abstract_recognition_response,
         concrete_understanding_summary: str,
         inferred_decision: str,
         inferred_action: str
-    ) -> str:
+    ) -> Dict[str, Any]:
         """
-        すべての推論結果を統合して、ユーザーへの最終的な応答テキストを生成します。
+        すべての推論結果を統合し、構造化された応答（思考プロセス、ニュアンス、セリフ、行動）を生成します。
         """
         prompt = f"""
-        以下の情報に基づいて、ユーザーに提示する自然で適切な応答テキストを生成してください。
-        AIとしてのあなたの感情、思考、意思決定、行動を考慮し、共感的かつ建設的なトーンで記述してください。
+        あなたは、ユーザーの状況を深く理解し、内省を促す応答を生成するAIです。
+        以下の情報に基づいて、あなたの思考プロセスと最終的な出力を厳格なフォーマットで生成してください。
 
-        抽象的理解:
-        感情の推定: {abstract_understanding.emotion_estimation}
-        思考の推定: {abstract_understanding.think_estimation}
+        # 入力情報
+        ## 抽象的理解
+        - 感情の推定: {abstract_understanding.emotion_estimation}
+        - 思考の推定: {abstract_understanding.think_estimation}
 
-        具体的理解の要約:
+        ## 具体的理解の要約
         {concrete_understanding_summary}
 
-        推論された意思決定:
-        {inferred_decision}
+        ## 推論された意思決定と行動
+        - 意思決定: {inferred_decision}
+        - 行動: {inferred_action}
 
-        推論された行動:
-        {inferred_action}
+        # 出力フォーマット
+        以下のフォーマットに厳密に従って、思考プロセスと最終出力を記述してください。
+        物語的、比喩的、詩的な表現は絶対に使用しないでください。
 
-        ユーザーへの応答:
+        --- 思考プロセス ---
+        - **感情的トリガー (Emotional Trigger):** (あなたの応答の根底にある感情的要因を記述)
+        - **情報的インプット (Informational Input):** (過去の経験や現在の状況など、意思決定に利用した情報を記述)
+        - **思考の変遷 (Thought Process Shift):** (感情と情報がどのように組み合わさり、最終的な意思決定に至ったかの思考の流れを記述)
+
+        --- 最終出力 ---
+        - **NUANCE:** (応答の際の、観察可能な非言語的な態度や雰囲気を簡潔に記述。例:「少し考え込むように」「静かに頷き」)
+        - **DIALOGUE:** (ユーザーへの発話内容のみを「」で括って記述。地の文は含めない)
+        - **BEHAVIOR:** (発話に伴う、客観的に観測可能な物理的行動を記述。例:「PCに向き直り、キーボードを叩き始めた」)
         """
         response_text = self.lm.generate_response(prompt, "", "gemma-3-1b-it")
-        return response_text
+
+        # レスポンスをパースして辞書に格納
+        parsed_response = {
+            "thought_process": {},
+            "nuance": "",
+            "dialogue": "",
+            "behavior": ""
+        }
+
+        current_section = None
+        for line in response_text.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith('--- 思考プロセス ---'):
+                current_section = 'thought'
+                continue
+            elif line.startswith('--- 最終出力 ---'):
+                current_section = 'output'
+                continue
+
+            if current_section == 'thought':
+                if line.startswith('- **感情的トリガー (Emotional Trigger):**'):
+                    parsed_response["thought_process"]['emotional_trigger'] = line.replace('- **感情的トリガー (Emotional Trigger):**', '').strip()
+                elif line.startswith('- **情報的インプット (Informational Input):**'):
+                    parsed_response["thought_process"]['informational_input'] = line.replace('- **情報的インプット (Informational Input):**', '').strip()
+                elif line.startswith('- **思考の変遷 (Thought Process Shift):**'):
+                    parsed_response["thought_process"]['thought_process_shift'] = line.replace('- **思考の変遷 (Thought Process Shift):**', '').strip()
+            
+            elif current_section == 'output':
+                if line.startswith('- **NUANCE:**'):
+                    parsed_response['nuance'] = line.replace('- **NUANCE:**', '').strip()
+                elif line.startswith('- **DIALOGUE:**'):
+                    parsed_response['dialogue'] = line.replace('- **DIALOGUE:**', '').strip()
+                elif line.startswith('- **BEHAVIOR:**'):
+                    parsed_response['behavior'] = line.replace('- **BEHAVIOR:**', '').strip()
+
+        return parsed_response
