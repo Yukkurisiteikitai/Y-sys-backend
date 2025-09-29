@@ -1,6 +1,6 @@
 # architecture/user_response/schema.py
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict
 
 class UserResponse(BaseModel):
     """
@@ -14,7 +14,19 @@ class UserResponse(BaseModel):
         default="",
         description="推論された意思決定に基づき、ユーザーが取る可能性のある具体的な行動。"
     )
-    final_response: str = Field(
+    thought_process: Dict[str, str] = Field(
+        default={},
+        description="応答生成に至る思考プロセス（感情的トリガー、情報的インプット、思考の変遷）"
+    )
+    nuance: str = Field(
         default="",
-        description="上記の推論を踏まえ、ユーザーの状況や感情に寄り添った、最終的な応答メッセージ。"
+        description="応答の際の、観察可能な非言語的な態度や雰囲気。"
+    )
+    dialogue: str = Field(
+        default="",
+        description="ユーザーへの実際のセリフ。"
+    )
+    behavior: str = Field(
+        default="",
+        description="セリフに伴う、客観的に観測可能な物理的行動。"
     )

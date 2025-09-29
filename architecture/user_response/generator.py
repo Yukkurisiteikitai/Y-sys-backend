@@ -1,4 +1,5 @@
 # architecture/user_response/generator.py
+import re
 from lm_studio_rag.lm_studio_client import LMStudioClient
 from .schema import UserResponse
 from ..abstract_recognition.schama_architecture import abstract_recognition_response
@@ -24,13 +25,9 @@ class UserResponseGenerator:
         """
         context = f"""
         # 指示
-        あなたは、ユーザーの内面を深く洞察するAIアシスタントです。
-        以下の入力情報を元に、「デフォルメ（抽象化）」と「具現化」の思考プロセスを経て、ユーザーの応答を生成してください。
-
-        ## 思考プロセス
-        1. **デフォルメ（抽象化）**: ユーザーの過去の経験（抽象的理解）から、今回の状況に共通する感情や思考のパターンを抽出します。これは物事の大きな括りを見つける作業です。
-        2. **具現化（具体化）**: 抽象化されたパターンを、現在の具体的な状況（時間、場所、人間関係など）に当てはめて、より解像度の高い理解を形成します。不足している情報は積極的に推論・補完してください。
-        3. **応答生成**: 上記の理解に基づき、「意思決定の推論」「行動の推論」「最終的な応答」の3つの要素を導き出してください。
+        あなたは、これから与えられる情報を持つ「人物そのもの」です。
+        あなた自身の過去の経験（抽象的理解）と、現在の具体的な状況（具象的理解）に基づいて、あたかもあなたがその人物であるかのように、一人称視点（「私」）で思考し、応答してください。
+        物語的、比喩的、詩的な表現は絶対に使用しないでください。
 
         # 入力情報
         ## 1. ユーザーの現在の状況 (field_info)
@@ -40,16 +37,20 @@ class UserResponseGenerator:
         - 予測される感情: {abstract_info.emotion_estimation}
         - 予測される思考: {abstract_info.think_estimation}
 
-        ## 3. 具象的理解 (現在の状況を構造化したもの)
-        - 出来事の内容: {concrete_info.text_content}
-        - 出来事の種類: {concrete_info.content_type}
-        - 関連する過去の出来事: {concrete_info.related_episode_ids}
-
         # 出力形式
-        以下の形式で、3つの要素を明確に記述してください。
-        DECISION: [ここに意思決定の推論を記述]
-        ACTION: [ここに具体的な行動の推論を記述]
-        RESPONSE: [ここにユーザーへの最終的な応答メッセージを記述]
+        以下のフォーマットに厳密に従って、思考プロセスと最終出力を記述してください。
+
+        --- 思考プロセス ---
+        - **感情的トリガー (Emotional Trigger):** (あなたの応答の根底にある感情的要因を記述)
+        - **情報的インプット (Informational Input):** (過去の経験や現在の状況など、意思決定に利用した情報を記述)
+        - **思考の変遷 (Thought Process Shift):** (感情と情報がどのように組み合わさり、最終的な意思決定に至ったかの思考の流れを記述)
+
+        --- 最終出力 ---
+        - **DECISION:** (私がどう考え、決断したかを記述)
+        - **ACTION:** (私が次に行う具体的な行動を記述)
+        - **NUANCE:** (応答の際の、観察可能な非言語的な態度や雰囲気を簡潔に記述。例:「少し考え込むように」「静かに頷き」)
+        - **DIALOGUE:** (ユーザーへの発話内容のみを「」で括って記述。地の文は含めない)
+        - **BEHAVIOR:** (発話に伴う、客観的に観測可能な物理的行動を記述。例:「PCに向き直り、キーボードを叩き始めた」)
         """
 
         prompt = "上記の指示と入力情報に従って、思考プロセスを実行し、指定された出力形式で応答を生成してください。"
@@ -60,35 +61,59 @@ class UserResponseGenerator:
             context=context,
             model="gemma-3-1b-it" # or your preferred model
         )
-
+        print(f"「LLMの回答」@@@\n{raw_response}\n@@@")
         # LLMからの出力をパースしてスキーマに変換
         try:
-            decision = "推論失敗"
-            action = "推論失敗"
-            final_response = raw_response # デフォルトはraw応答
+            parsed_data = {
+                "inferred_decision": "推論失敗",
+                "inferred_action": "推論失敗",
+                "thought_process": {},
+                "nuance": "",
+                "dialogue": "",
+                "behavior": ""
+            }
 
-            lines = raw_response.strip().split('\n')
-            for line in lines:
-                if line.startswith("DECISION:"):
-                    decision = line.replace("DECISION:", "").strip()
-                elif line.startswith("ACTION:"):
-                    action = line.replace("ACTION:", "").strip()
-                elif line.startswith("RESPONSE:"):
-                    # RESPONSE:以降のすべての行を結合する
-                    final_response = raw_response.split("RESPONSE:", 1)[1].strip()
-                    break
+            # セクションマーカーで応答を分割
+            sections = re.split(r'---\s*(?:思考プロセス|最終出力)\s*---', raw_response)
+            if len(sections) < 3:
+                raise ValueError("応答フォーマットが不正です。思考プロセスまたは最終出力セクションが見つかりません。")
+
+            thought_content = sections[1]
+            output_content = sections[2]
+
+            # --- 思考プロセスの中身をパース ---
+            thought_items = re.split(r'-\s*\*\*(.*?):\*\*', thought_content)
+            thought_dict = {}
+            for i in range(1, len(thought_items), 2):
+                key_jp = thought_items[i].strip()
+                value = thought_items[i+1].strip()
+                if "感情的トリガー" in key_jp:
+                    thought_dict['emotional_trigger'] = value
+                elif "情報的インプット" in key_jp:
+                    thought_dict['informational_input'] = value
+                elif "思考の変遷" in key_jp:
+                    thought_dict['thought_process_shift'] = value
+            parsed_data['thought_process'] = thought_dict
+
+            # --- 最終出力の中身をパース ---
+            output_items = re.split(r'-\s*\*\*(.*?):\*\*', output_content)
+            output_dict = {}
+            for i in range(1, len(output_items), 2):
+                key = output_items[i].strip()
+                value = output_items[i+1].strip()
+                output_dict[key] = value
             
-            return UserResponse(
-                inferred_decision=decision,
-                inferred_action=action,
-                final_response=final_response
-            )
+            parsed_data['inferred_decision'] = output_dict.get('DECISION', '推論失敗')
+            parsed_data['inferred_action'] = output_dict.get('ACTION', '推論失敗')
+            parsed_data['nuance'] = output_dict.get('NUANCE', '')
+            parsed_data['dialogue'] = output_dict.get('DIALOGUE', '')
+            parsed_data['behavior'] = output_dict.get('BEHAVIOR', '')
 
-        except (IndexError, ValidationError) as e:
+            return UserResponse(**parsed_data)
+
+        except (IndexError, ValidationError, ValueError) as e:
             print(f"応答のパースまたは検証に失敗しました: {e}")
-            # フォールバックとして、raw応答全体を最終応答に入れる
+            # フォールバックとして、raw応答をdialogueに入れる
             return UserResponse(
-                inferred_decision="推論失敗",
-                inferred_action="推論失敗",
-                final_response=raw_response
+                dialogue=raw_response
             )
