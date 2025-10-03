@@ -1,30 +1,21 @@
-# main.py
 import uuid
 from datetime import datetime
-
-# 必要なモジュールをインポート
+from tqdm import tqdm
 from lm_studio_rag.storage import RAGStorage
 from lm_studio_rag.lm_studio_client import LMStudioClient
 from architecture.concrete_understanding.base import ConcreteUnderstanding
 from architecture.concrete_understanding.schema_architecture import EpisodeData
 from architecture.user_response.generator import UserResponseGenerator
 
+
+
 def setup_storage() -> RAGStorage:
     """RAGStorageを初期化し、サンプルデータを投入する"""
-    print("RAGストレージを初期化しています...")
-    # 永続化モードで初期化 (データが保存されます)
-    storage = RAGStorage(USE_MEMORY_RUN=False)
+    print("RAGストレージを初期化")
+    storage = RAGStorage(USE_MEMORY_RUN=False) # ファイル保存あり
 
-    # --- サンプルデータの追加 ---
-    # ここでは簡単な例を数件だけ追加します。
-    # 実際のアプリケーションでは、より多くのデータを事前にロードすることが望ましいです。
-    print("サンプルの経験データをデータベースに追加します。")
-    
-    # sample_experience_data= [
-    #     "昔、犬に追いかけられて怖い思いをした",
-    #     "子供の頃、人懐っこい犬と遊んで楽しかった",
-    #     "私はもともと動物が好きだ"
-    # ]
+
+    print("テスト  ^経験データをデータベースに追加")
     sample_experience_data = [
         "幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。",
         "小学校の先生の影響を強く受け、作れば自分の欲を叶えられるという考え方を学んだ。周囲からは「聞き魔」と呼ばれる。",
@@ -48,7 +39,7 @@ def setup_storage() -> RAGStorage:
         "将来に対する不安はあまりない。自分が良くなった素敵な未来があるだろうと考えている。どこで死んでも良い、今を全力に生きれるような人でありたいと考えている。"
     ]
     
-    for d in sample_experience_data:
+    for d in tqdm(sample_experience_data, desc="Load-test-data",ncols=120, ascii="-="):
         storage.save_experience_data(
             text=d,
             metadata={"source": "initial_data"}
@@ -59,11 +50,14 @@ def setup_storage() -> RAGStorage:
 
 def main_cli():
     """ユーザーが状況を入力し、AIの応答を生成するCLIアプリケーション"""
-
     storage = setup_storage()
     lm_client = LMStudioClient()
 
-    # 各アーキテクチャのインスタンスを生成
+    """
+    [memo]
+    抽象的アーキテクチャがインスタンスになっていない理由は
+    具体的アーキテクチャのインスタンスの中で抽象的アーキテクチャを内方するようにしているためである
+    """
     concrete_process = ConcreteUnderstanding(storage=storage, lm_client=lm_client)
     response_gen = UserResponseGenerator(lm_client=lm_client)
 
@@ -78,18 +72,14 @@ def main_cli():
                 break
             if not field_info_input:
                 continue
+            
             print("\033[37;43m-----section1[抽象的理解の推論]--------\033[0m")
-            print("\n推論を実行中... (応答まで数秒かかります)")
-
-            # 1. 抽象的理解の取得
             abstract_result = concrete_process.start_inference(field_info_input)
             if not abstract_result:
                 print("エラー: 抽象的理解の取得に失敗しました。")
                 continue
             
             print("\033[37;43m-----section2[具体的理解の推論]--------\033[0m")
-            
-            # 2. 具象的理解データの簡易生成 (CLI入力から作成)
             concrete_info = EpisodeData(
                 episode_id=str(uuid.uuid4()),
                 thread_id="cli_thread",
@@ -102,8 +92,8 @@ def main_cli():
                 status="active",
                 sensitivity_level="medium"
             )
+            
             print("\033[37;43m-----section3[最終応答の推論]--------\033[0m")
-            # 3. 最終応答の生成
             final_response = response_gen.generate(
                 abstract_info=abstract_result,
                 concrete_info=concrete_info,
@@ -111,10 +101,9 @@ def main_cli():
             )
 
             print("\033[37;43m-----section4[思考の表示]--------\033[0m")
-            # 4. 結果の表示
             print("\n--- 推論結果 ---")
-            print(f"🤔 推論された意思決定: {final_response.inferred_decision}")
-            print(f"🏃 推論された行動: {final_response.inferred_action}")
+            print(f"意思決定: {final_response.inferred_decision}")
+            print(f"行動　　: {final_response.inferred_action}")
             
             print("\n--- 思考プロセス ---")
             if final_response.thought_process:
