@@ -1,4 +1,4 @@
-﻿requests>=2.28
+requests>=2.28
 sentence-transformers>=2.2.2
 numpy>=1.24
 scikit-learn>=1.2
@@ -6,3 +6,6 @@ chromadb>=0.3.26   # optional: Chromaを使う場合
 faiss-cpu>=1.7.4   # optional: faissを使う場合
 python-dotenv>=1.0.0
 tqdm>=4.65
+fastapi>=0.109.0
+uvicorn>=0.27.0
+sse-starlette>=1.8.2

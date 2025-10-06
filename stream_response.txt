@@ -1,0 +1,22 @@
+event: phase_start
+data: {'phase': 'abstract_recognition', 'timestamp': '2025-10-06T14:59:50.825109'}
+event: abstract_result
+data: {'emotional_state': ['3ヶ月かけてクソゲーを作った', '3ヶ月かけてクソゲーを作った。', 'context_experience', '「もっと良いことを成し遂げたい」という欲求', '「自分にできる」という自信', 'その結果に対する満足感', 'その達成に対する決意', 'もっと良いことを成し遂げたい', 'ゲーム制作に興味を持ち', 'ゲーム開発に興味を持ち', '不安:', '周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで', '小学4年生の時にTokyo Game Showに行ったことがきっかけで', '幼少期に', '挑戦的な意欲', '挑戦的な意欲:', '目標達成への努力と', '目標達成への決意', '結論:', '自信と活発な行動', '自分にできる', '自己実現への期待と', '自己肯定感の向上:', '自己肯定感の向上と'], 'cognitive_pattern': '「自分にはできる」「きっとうまくいく」というポジティブな思考を強いと考えられる。', 'value_alignment': ['autonomy', 'growth'], 'decision_context': 'career_planning', 'relevant_tags': ['self_improvement', 'future_planning'], 'confidence': 0.75}
+event: phase_complete
+data: {'phase': 'abstract_recognition', 'duration_ms': 7361.411999999999}
+event: phase_start
+data: {'phase': 'concrete_understanding', 'timestamp': '2025-10-06T14:59:58.197887'}
+event: concrete_links
+data: {'related_episodes': [{'episode_id': 'experience_2025-09-29T01:50:10Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-09-30T00:42:12Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-10-06T04:48:12Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}], 'total_retrieved': 3}
+event: phase_complete
+data: {'phase': 'concrete_understanding', 'duration_ms': 7398.7429999999995}
+event: phase_start
+data: {'phase': 'response_generation', 'timestamp': '2025-10-06T14:59:58.234964'}
+event: thought_process
+data: {'inferred_decision': '将来のキャリアについて悩んでいる場合、幼少期からゲーム制作に興味を持ち、3ヶ月でクソゲーを作成した経験を持つ人たちは、', 'inferred_action': '将来のキャリアについて悩んでいる場合、幼少期からゲーム制作に興味を持ち、3ヶ月でクソゲーを作成した経験を持つ人たちは、', 'key_considerations': [], 'emotional_tone': 'neutral'}
+event: phase_complete
+data: {'phase': 'response_generation', 'duration_ms': 11346.182999999999}
+event: final_response
+data: {'message_id': 'c0f22195-9226-468d-8424-bca33e4ee9fe', 'response': {'nuance': '自分の環境が成長の基盤になったというメタデータは、', 'dialogue': '自分の興味や経験が成功の鍵である', 'behavior': '** PCに向き直り、キーボードを叩き始めた。'}, 'metadata': {'total_processing_time_ms': 11357, 'model_used': 'gemma-3-1b-it', 'safety_check': 'passed'}}
+event: stream_end
+data: {'status': 'complete', 'timestamp': '2025-10-06T15:00:02.193915'}

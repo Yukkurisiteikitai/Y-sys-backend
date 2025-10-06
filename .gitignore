@@ -7,3 +7,4 @@ faiss_metadata.json
 .pyc
 chroma_db
 .sqlite3
+memo
