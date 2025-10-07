@@ -1,22 +1,22 @@
 event: phase_start
-data: {'phase': 'abstract_recognition', 'timestamp': '2025-10-06T14:59:50.825109'}
+data: {'phase': 'abstract_recognition', 'timestamp': '2025-10-07T12:26:15.336870'}
 event: abstract_result
-data: {'emotional_state': ['3ヶ月かけてクソゲーを作った', '3ヶ月かけてクソゲーを作った。', 'context_experience', '「もっと良いことを成し遂げたい」という欲求', '「自分にできる」という自信', 'その結果に対する満足感', 'その達成に対する決意', 'もっと良いことを成し遂げたい', 'ゲーム制作に興味を持ち', 'ゲーム開発に興味を持ち', '不安:', '周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで', '小学4年生の時にTokyo Game Showに行ったことがきっかけで', '幼少期に', '挑戦的な意欲', '挑戦的な意欲:', '目標達成への努力と', '目標達成への決意', '結論:', '自信と活発な行動', '自分にできる', '自己実現への期待と', '自己肯定感の向上:', '自己肯定感の向上と'], 'cognitive_pattern': '「自分にはできる」「きっとうまくいく」というポジティブな思考を強いと考えられる。', 'value_alignment': ['autonomy', 'growth'], 'decision_context': 'career_planning', 'relevant_tags': ['self_improvement', 'future_planning'], 'confidence': 0.75}
+data: {'emotional_state': ['context_experience', '「できるだけ納得がいくようにする」という努力が', '「まだ決めていない」という漠然とした不安感や', 'できるだけ納得がいくようにする', 'まだ決めていない', '相手との対立を避けるための戦略として機能し', '相手との関係が深まることを恐れる気持ち', '逃げる'], 'cognitive_pattern': 'context_experience', 'value_alignment': ['autonomy', 'growth'], 'decision_context': 'career_planning', 'relevant_tags': ['self_improvement', 'future_planning'], 'confidence': 0.75}
 event: phase_complete
-data: {'phase': 'abstract_recognition', 'duration_ms': 7361.411999999999}
+data: {'phase': 'abstract_recognition', 'duration_ms': 8703.979000000001}
 event: phase_start
-data: {'phase': 'concrete_understanding', 'timestamp': '2025-10-06T14:59:58.197887'}
+data: {'phase': 'concrete_understanding', 'timestamp': '2025-10-07T12:26:24.041012'}
 event: concrete_links
-data: {'related_episodes': [{'episode_id': 'experience_2025-09-29T01:50:10Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-09-30T00:42:12Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-10-06T04:48:12Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}], 'total_retrieved': 3}
+data: {'related_episodes': [{'episode_id': 'experience_2025-09-30T01:27:20Z', 'text_snippet': '他人と意見が対立した場合は、できるだけ納得がいくようにするが、考え方が違うなら離れる。人間関係でトラブルが起きた場合は、責任のありどころを明示して解決しようとするが、ダメなら逃げる。対立やトラブルを避けるために、自分の考えをあまり明確に定義しないようにしている。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-09-25T11:12:58Z', 'text_snippet': '現実と理想の間で葛藤している。やりたいことがたくさんあるが、今やっていることを修了するまではそれをすることが許されないため、優先順位をつけざるを得ない状況。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-10-07T03:25:44Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}], 'total_retrieved': 3}
 event: phase_complete
-data: {'phase': 'concrete_understanding', 'duration_ms': 7398.7429999999995}
+data: {'phase': 'concrete_understanding', 'duration_ms': 8705.293}
 event: phase_start
-data: {'phase': 'response_generation', 'timestamp': '2025-10-06T14:59:58.234964'}
+data: {'phase': 'response_generation', 'timestamp': '2025-10-07T12:26:24.042268'}
 event: thought_process
-data: {'inferred_decision': '将来のキャリアについて悩んでいる場合、幼少期からゲーム制作に興味を持ち、3ヶ月でクソゲーを作成した経験を持つ人たちは、', 'inferred_action': '将来のキャリアについて悩んでいる場合、幼少期からゲーム制作に興味を持ち、3ヶ月でクソゲーを作成した経験を持つ人たちは、', 'key_considerations': [], 'emotional_tone': 'neutral'}
+data: {'inferred_decision': '** 将来のキャリアについて悩んでいると仮定すると、**「自分の考えをあまり明確に定義しないようにする」**という思考が強まることを優先し、**「妥協点を見つけなければならない」**というプレッシャーを増大させるため、**「自分の考えをあまり明確に定義しないようにする」**という行動が強化されると予測できる。', 'inferred_action': '** 自分の考えをあまり明確に定義しないようにする行動が強化されるため、**「自分の考えをあまり明確に定義しない」**という行動が強化され、**「妥協点を見つけなければならない」**というプレッシャーを増大させるため、**「自分の考えをあまり明確に定義しないようにする」**という行動が強化されると予測できる。', 'key_considerations': ['emotional_trigger: ** 「まだ決めていない」という漠然とした不安感、相手との関係が深まることを恐れる気持ち。', 'informational_input: ** 「context_experience」の経験から、自分のスキルが足りないかもしれない、妥協点を見つけなければならないというプレッシャーを感じる。', 'thought_process_shift: ** 「妥協点を見つけなければならない」「自分の考えをあまり明確に定義しないようにする」という思考パターンが強まることで、周囲との対立やトラブルを避けることを優先し、自分の考えをあまり明確に定義しないようにする。'], 'emotional_tone': 'neutral'}
 event: phase_complete
-data: {'phase': 'response_generation', 'duration_ms': 11346.182999999999}
+data: {'phase': 'response_generation', 'duration_ms': 13286.255000000001}
 event: final_response
-data: {'message_id': 'c0f22195-9226-468d-8424-bca33e4ee9fe', 'response': {'nuance': '自分の環境が成長の基盤になったというメタデータは、', 'dialogue': '自分の興味や経験が成功の鍵である', 'behavior': '** PCに向き直り、キーボードを叩き始めた。'}, 'metadata': {'total_processing_time_ms': 11357, 'model_used': 'gemma-3-1b-it', 'safety_check': 'passed'}}
+data: {'message_id': '4c530964-2796-4e0a-9e4c-4696bd378b01', 'response': {'nuance': '** 相手との対立やトラブルを避けることを優先し、自分の考えをあまり明確に定義しないようにするという行動が強化されると、**「妥協点を見つけなければならない」**というプレッシャーを増大させるため、**「自分の考えをあまり明確に定義しないようにする」**という行動が強化されると予測できる', 'dialogue': '', 'behavior': ''}, 'metadata': {'total_processing_time_ms': 13286, 'model_used': 'gemma-3-1b-it', 'safety_check': 'passed'}}
 event: stream_end
-data: {'status': 'complete', 'timestamp': '2025-10-06T15:00:02.193915'}
+data: {'status': 'complete', 'timestamp': '2025-10-07T12:26:28.623660'}

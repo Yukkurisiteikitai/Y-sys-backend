@@ -1,6 +1,5 @@
 
 import asyncio
-import asyncio
 import json
 import re
 import uuid
@@ -10,6 +9,12 @@ from typing import List, Optional, Dict, Any
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
+from concurrent.futures import ThreadPoolExecutor
+
+# --- スレッドプール Executor ---
+# CPUバウンドな処理(LLM推論など)を非同期に実行するための専用Executor
+# デフォルトのExecutorはスレッド数が少なく、枯渇する可能性があるため、十分な数を確保
+inference_executor = ThreadPoolExecutor(max_workers=100)
 
 # --- データモデル (仕様書 v1.0 より) ---
 
@@ -196,7 +201,7 @@ app = FastAPI(
 )
 
 # セッション情報を保持するためのシンプルなインメモリ辞書
-sessions = {}
+sessions: Dict[str, SessionResponse] = {}
 
 @app.post("/api/v1/sessions", response_model=SessionResponse)
 async def create_session(request: SessionRequest):
@@ -209,69 +214,64 @@ async def create_session(request: SessionRequest):
 
 @app.post("/api/v1/sessions/{session_id}/messages/stream")
 async def stream_message(session_id: str, request: MessageRequest):
-    """
-    ユーザーメッセージを送信し、ストリーミング形式で応答を受け取ります。
-    """
-    if session_id not in sessions:
+    """ユーザーメッセージを送信し、ストリーミング形式で応答を受け取ります。"""
+    session = sessions.get(session_id)
+    if not session:
         raise HTTPException(status_code=404, detail="SESSION_NOT_FOUND")
+    if session.expires_at < datetime.now():
+        if session_id in sessions:
+            del sessions[session_id]
+        raise HTTPException(status_code=404, detail="SESSION_EXPIRED")
 
     async def event_generator():
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         start_time = datetime.now()
         try:
-            # --- Phase 1: Abstract Recognition ---
+            # Phase 1: Abstract Recognition
             yield {"event": "phase_start", "data": {"phase": "abstract_recognition", "timestamp": datetime.now().isoformat()}}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
-            # ブロッキング処理を別スレッドで実行
             abstract_cli_result, retrieved_experiences = await loop.run_in_executor(
-                None, concrete_process.start_inference, request.message
+                inference_executor, concrete_process.start_inference, request.message
             )
-            
             if not abstract_cli_result:
                 raise Exception("Abstract recognition failed to produce a result.")
 
-            extracted_emotions = extract_keywords(abstract_cli_result.emotion_estimation)
-            extracted_pattern = extract_main_idea(abstract_cli_result.think_estimation)
-
             abstract_api_result = AbstractRecognitionResult(
-                emotional_state=extracted_emotions if extracted_emotions else ["analysis_failed"],
-                cognitive_pattern=extracted_pattern if extracted_pattern else "analysis_failed",
-                value_alignment=["autonomy", "growth"], # Dummy
-                decision_context="career_planning", # Dummy
-                relevant_tags=["self_improvement", "future_planning"], # Dummy
-                confidence=0.75 # Dummy
+                emotional_state=extract_keywords(abstract_cli_result.emotion_estimation) or ["analysis_failed"],
+                cognitive_pattern=extract_main_idea(abstract_cli_result.think_estimation) or "analysis_failed",
+                value_alignment=["autonomy", "growth"],
+                decision_context="career_planning",
+                relevant_tags=["self_improvement", "future_planning"],
+                confidence=0.75
             )
-            
             yield {"event": "abstract_result", "data": abstract_api_result.model_dump()}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
             yield {"event": "phase_complete", "data": {"phase": "abstract_recognition", "duration_ms": (datetime.now() - start_time).total_seconds() * 1000}}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
-            # --- Phase 2: Concrete Understanding ---
+            # Phase 2: Concrete Understanding
             yield {"event": "phase_start", "data": {"phase": "concrete_understanding", "timestamp": datetime.now().isoformat()}}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
             
-            episodes = []
-            if retrieved_experiences:
-                for exp in retrieved_experiences:
-                    episodes.append(Episode(
-                        episode_id=exp.get("id", str(uuid.uuid4())),
-                        text_snippet=exp.get("text", "")[:150],
-                        relevance_score=max(0, 1 - exp.get("score", 1.0)),
-                        tags=[exp.get("metadata", {}).get("category", "experience")]
-                    ))
+            episodes = [
+                Episode(
+                    episode_id=exp.get("id", str(uuid.uuid4())),
+                    text_snippet=exp.get("text", "")[:150],
+                    relevance_score=max(0, 1 - exp.get("score", 1.0)),
+                    tags=[exp.get("metadata", {}).get("category", "experience")]
+                ) for exp in retrieved_experiences
+            ] if retrieved_experiences else []
 
             concrete_result = ConcreteUnderstandingResult(related_episodes=episodes, total_retrieved=len(episodes))
-
             yield {"event": "concrete_links", "data": concrete_result.model_dump()}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
             yield {"event": "phase_complete", "data": {"phase": "concrete_understanding", "duration_ms": (datetime.now() - start_time).total_seconds() * 1000}}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
-            # --- Phase 3 & 4: Response Generation and Finalization ---
+            # Phase 3 & 4: Response Generation and Finalization
             yield {"event": "phase_start", "data": {"phase": "response_generation", "timestamp": datetime.now().isoformat()}}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
             concrete_info = EpisodeData(
                 episode_id=str(uuid.uuid4()), thread_id=session_id, timestamp=datetime.now(),
@@ -279,22 +279,17 @@ async def stream_message(session_id: str, request: MessageRequest):
                 content_type="situational_description", text_content=request.message,
                 status="active", sensitivity_level=request.sensitivity_level
             )
-            # ブロッキング処理を別スレッドで実行
             final_user_response = await loop.run_in_executor(
-                None, response_gen.generate, abstract_cli_result, concrete_info, request.message
+                inference_executor, response_gen.generate, abstract_cli_result, concrete_info, request.message
             )
 
-            parsed_data = {}
-            if "DECISION:" in final_user_response.dialogue or "ACTION:" in final_user_response.dialogue:
-                parsed_data = parse_final_user_response(final_user_response.dialogue)
-            else:
-                parsed_data = {
-                    "inferred_decision": final_user_response.inferred_decision,
-                    "inferred_action": final_user_response.inferred_action,
-                    "nuance": final_user_response.nuance,
-                    "dialogue": final_user_response.dialogue,
-                    "behavior": final_user_response.behavior
-                }
+            parsed_data = parse_final_user_response(final_user_response.dialogue) if "DECISION:" in final_user_response.dialogue or "ACTION:" in final_user_response.dialogue else {
+                "inferred_decision": final_user_response.inferred_decision,
+                "inferred_action": final_user_response.inferred_action,
+                "nuance": final_user_response.nuance,
+                "dialogue": final_user_response.dialogue,
+                "behavior": final_user_response.behavior
+            }
 
             thought_process_api = ThoughtProcess(
                 inferred_decision=parsed_data.get("inferred_decision", ""),
@@ -302,40 +297,37 @@ async def stream_message(session_id: str, request: MessageRequest):
                 key_considerations=[f"{k}: {v}" for k, v in final_user_response.thought_process.items()],
                 emotional_tone="neutral"
             )
-
             yield {"event": "thought_process", "data": thought_process_api.model_dump()}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
             yield {"event": "phase_complete", "data": {"phase": "response_generation", "duration_ms": (datetime.now() - start_time).total_seconds() * 1000}}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
             final_response_data = FinalResponseData(
                 nuance=parsed_data.get("nuance", ""),
                 dialogue=parsed_data.get("dialogue", "パース失敗"),
                 behavior=parsed_data.get("behavior", "")
             )
-            total_time = (datetime.now() - start_time).total_seconds() * 1000
             final_response_api = FinalResponse(
                 response=final_response_data,
                 metadata={
-                    "total_processing_time_ms": int(total_time),
+                    "total_processing_time_ms": int((datetime.now() - start_time).total_seconds() * 1000),
                     "model_used": "gemma-3-1b-it",
                     "safety_check": "passed"
                 }
             )
             yield {"event": "final_response", "data": final_response_api.model_dump()}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
-            # --- Stream End ---
             yield {"event": "stream_end", "data": {"status": "complete", "timestamp": datetime.now().isoformat()}}
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0)
 
         except Exception as e:
-            error_message = {"error_code": "INTERNAL_ERROR", "message": str(e), "severity": "high"}
-            yield {"event": "error", "data": error_message}
-            await asyncio.sleep(0.01)
+            error_data = {"code": "INTERNAL_ERROR", "message": str(e), "timestamp": datetime.now().isoformat()}
+            # SSEではエラー時にHTTPステータスコードを変更できないため、
+            # 'error'イベントを送信し、クライアント側で再試行などを制御する
+            yield {"event": "error", "data": json.dumps(error_data), "retry": 10000} # retryはクライアントへの再接続推奨時間(ms)
             yield {"event": "stream_end", "data": {"status": "error", "timestamp": datetime.now().isoformat()}}
-            await asyncio.sleep(0.01)
-
+        
     return EventSourceResponse(event_generator())
 
 @app.get("/api/v1/sessions/{session_id}/messages")

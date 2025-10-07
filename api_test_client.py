@@ -2,6 +2,7 @@
 import requests
 import json
 import uuid
+from api_test_verifie import create_new_session
 
 # --- 設定 ---
 BASE_URL = "http://127.0.0.1:8000"
@@ -15,22 +16,9 @@ def run_test():
     print("--- API Test Client ---")
 
     # 1. セッションの作成
-    try:
-        print(f"1. Creating a new session...")
-        session_payload = {
-            "metadata": {
-                "client_info": "api_test_client.py",
-                "timestamp": "2025-10-06T12:00:00Z"
-            }
-        }
-        response = requests.post(f"{BASE_URL}/api/v1/sessions", json=session_payload)
-        response.raise_for_status()
-        session_data = response.json()
-        session_id = session_data.get("session_id")
-        print(f"   => Session created successfully: {session_id}")
-
-    except requests.exceptions.RequestException as e:
-        print(f"   [ERROR] Failed to create session: {e}")
+    print(f"1. Creating a new session...")
+    session_id = create_new_session(BASE_URL)
+    if not session_id:
         return
 
     # 2. メッセージを送信し、ストリーミング応答を受信

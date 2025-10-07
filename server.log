@@ -14,3 +14,9 @@ INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 APIサーバーを起動します: http://127.0.0.1:8000
 INFO:     127.0.0.1:51974 - "POST /api/v1/sessions HTTP/1.1" 200 OK
 INFO:     127.0.0.1:51975 - "POST /api/v1/sessions/91d6ce95-a5f0-4d73-8531-a45925313299/messages/stream HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36672]
+/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
