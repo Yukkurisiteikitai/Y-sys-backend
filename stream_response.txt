@@ -1,0 +1,23 @@
+event: phase_start
+data: {'phase': 'abstract_recognition', 'timestamp': '2025-10-07T14:06:21.751479'}
+event: abstract_result
+data: {'emotional_state': ['3ヶ月かけてクソゲーを作った。', 'context_experience', 'context_field_info', 'ゲーム制作に興味を持ち', 'ポイント:', '不安:', '周囲に家がある田舎と都会の中間くらいの都市で育った。ゲーム制作に興味を持ち', '周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで', '将来のキャリアについて悩んでいる', '幼少期に', '挑戦への意欲:', '挑戦への意欲が低い', '自己肯定感の低下:', '自己評価が低く', '言い換え:'], 'cognitive_pattern': '将来のキャリアについて悩んでいる場合、自分のスキルで十分にゲーム開発ができていないか、その可能性を疑いながらも、過去の経験（クソゲー制作）に自信を持つことで、少し安心感を得るかもしれません', 'value_alignment': ['autonomy', 'growth'], 'decision_context': 'career_planning', 'relevant_tags': ['self_improvement', 'future_planning'], 'confidence': 0.75}
+event: phase_complete
+data: {'phase': 'abstract_recognition', 'duration_ms': 9392.749}
+event: phase_start
+data: {'phase': 'concrete_understanding', 'timestamp': '2025-10-07T14:06:31.144340'}
+event: concrete_links
+data: {'related_episodes': [{'episode_id': 'experience_2025-09-29T01:23:56Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-09-29T01:34:24Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}, {'episode_id': 'experience_2025-09-30T01:28:15Z', 'text_snippet': '幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。', 'relevance_score': 0.0, 'tags': ['experience'], 'source_metadata': None}], 'total_retrieved': 3}
+event: phase_complete
+data: {'phase': 'concrete_understanding', 'duration_ms': 9393.205}
+event: phase_start
+data: {'phase': 'response_generation', 'timestamp': '2025-10-07T14:06:31.144742'}
+: ping - 2025-10-07 05:06:36.752553+00:00
+event: thought_process
+data: {'inferred_decision': "**  「まずは、自分のスキルレベルを客観的に評価し、ゲーム開発の知識・技術不足が自覚되는 점을 고려하여,  좀 더 체계적인 학습 계획을 세우고,  다른 개발 도구를 활용하는 방법을 고민해볼 것이다.  (It's important to evaluate my own skills objectively, and consider the feeling of not being confident in my abilities.  I will then plan a more structured learning plan and explore using other development tools.)」", 'inferred_action': '**  「まずは、オンラインのゲーム開発チュートリアルやコミュニティに参加하여,  자신의 부족한 부분을 보완하는 방법을 배우고,  다른 개발 도구들을 활용하는 방법을 연구한다. (First, join online game development tutorials and communities to learn how to supplement my weaknesses and explore using other development tools.)」', 'key_considerations': ['emotional_trigger: ** 将来のキャリアに対する不安', 'informational_input: ** 幼少期にゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った経験。', 'thought_process_shift: ** 過去のクソゲー制作経験に自信을 가지고 있지만、将来のキャリアに対する不安이 커져, 자신의 역량에 대한 의심이 생겨나고 있습니다.'], 'emotional_tone': 'neutral'}
+event: phase_complete
+data: {'phase': 'response_generation', 'duration_ms': 18043.199}
+event: final_response
+data: {'message_id': 'd6e7640b-ab46-4426-8eb5-cd86e8bcc826', 'response': {'nuance': '**  「少し考え込むように、自分の弱点に目を向けるようにする', 'dialogue': '', 'behavior': '**  「PCに向き直り、キーボードを叩き始めた」'}, 'metadata': {'total_processing_time_ms': 18043, 'model_used': 'gemma-3-1b-it', 'safety_check': 'passed'}}
+event: stream_end
+data: {'status': 'complete', 'timestamp': '2025-10-07T14:06:39.795713'}

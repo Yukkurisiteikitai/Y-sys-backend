@@ -55,65 +55,76 @@ class UserResponseGenerator:
 
         prompt = "上記の指示と入力情報に従って、思考プロセスを実行し、指定された出力形式で応答を生成してください。"
 
-        # LLMにリクエストを送信
         raw_response = self.lm.generate_response(
             query=prompt,
             context=context,
-            model="gemma-3-1b-it" # or your preferred model
+            model="gemma-3-1b-it"
         )
         print(f"「LLMの回答」@@@\n{raw_response}\n@@@")
-        # LLMからの出力をパースしてスキーマに変換
+
         try:
-            parsed_data = {
-                "inferred_decision": "推論失敗",
-                "inferred_action": "推論失敗",
-                "thought_process": {},
-                "nuance": "",
-                "dialogue": "",
-                "behavior": ""
+            # --- 最終版・堅牢なパース戦略 ---
+            # 1. 応答全体から「キー: 値」のペアをすべて抽出する
+            #    キーに日本語など任意の文字が含まれることを許容する `([^\n:]+?)` を使用
+            pattern = r"(?im)^\s*[-*]*\s*([^\n:]+?)\s*[-*]*\s*:\s*(.*)"
+            matches = re.findall(pattern, raw_response)
+            
+            all_data = {key.strip(): value.strip() for key, value in matches}
+
+            if not all_data:
+                raise ValueError("応答からキーと値のペアを一つも抽出できませんでした。")
+
+            # 2. 抽出したデータからUserResponseのフィールドを埋める
+            thought_dict = {}
+            key_mapping = {
+                '感情的トリガー': 'emotional_trigger',
+                '情報的インプット': 'informational_input',
+                '思考の変遷': 'thought_process_shift'
+            }
+            # 英語キーも直接マッピング
+            direct_mapping = {
+                'DECISION': 'inferred_decision',
+                'ACTION': 'inferred_action',
+                'NUANCE': 'nuance',
+                'DIALOGUE': 'dialogue',
+                'BEHAVIOR': 'behavior'
             }
 
-            # セクションマーカーで応答を分割
-            sections = re.split(r'---\s*(?:思考プロセス|最終出力)\s*---', raw_response)
-            if len(sections) < 3:
-                raise ValueError("応答フォーマットが不正です。思考プロセスまたは最終出力セクションが見つかりません。")
+            # 最終的にUserResponseに渡すデータを準備
+            parsed_data = {
+                'thought_process': {},
+                'inferred_decision': '推論失敗',
+                'inferred_action': '推論失敗',
+                'nuance': '',
+                'dialogue': '',
+                'behavior': ''
+            }
 
-            thought_content = sections[1]
-            output_content = sections[2]
+            for key, value in all_data.items():
+                # まず日本語キーで検索
+                found = False
+                for jp, en in key_mapping.items():
+                    if jp in key:
+                        parsed_data['thought_process'][en] = value
+                        found = True
+                        break
+                if found: continue
 
-            # --- 思考プロセスの中身をパース ---
-            thought_items = re.split(r'-\s*\*\*(.*?):\*\*', thought_content)
-            thought_dict = {}
-            for i in range(1, len(thought_items), 2):
-                key_jp = thought_items[i].strip()
-                value = thought_items[i+1].strip()
-                if "感情的トリガー" in key_jp:
-                    thought_dict['emotional_trigger'] = value
-                elif "情報的インプット" in key_jp:
-                    thought_dict['informational_input'] = value
-                elif "思考の変遷" in key_jp:
-                    thought_dict['thought_process_shift'] = value
-            parsed_data['thought_process'] = thought_dict
-
-            # --- 最終出力の中身をパース ---
-            output_items = re.split(r'-\s*\*\*(.*?):\*\*', output_content)
-            output_dict = {}
-            for i in range(1, len(output_items), 2):
-                key = output_items[i].strip()
-                value = output_items[i+1].strip()
-                output_dict[key] = value
-            
-            parsed_data['inferred_decision'] = output_dict.get('DECISION', '推論失敗')
-            parsed_data['inferred_action'] = output_dict.get('ACTION', '推論失敗')
-            parsed_data['nuance'] = output_dict.get('NUANCE', '')
-            parsed_data['dialogue'] = output_dict.get('DIALOGUE', '')
-            parsed_data['behavior'] = output_dict.get('BEHAVIOR', '')
+                # 次に英語キーで検索
+                for en_key, field_name in direct_mapping.items():
+                    if en_key in key:
+                        # NUANCEは特別処理
+                        if field_name == 'nuance':
+                            parsed_data[field_name] = re.split(r'[。\n]', value)[0]
+                        # DIALOGUEは特別処理
+                        elif field_name == 'dialogue':
+                            parsed_data[field_name] = value.strip('「」')
+                        else:
+                            parsed_data[field_name] = value
+                        break
 
             return UserResponse(**parsed_data)
 
         except (IndexError, ValidationError, ValueError) as e:
             print(f"応答のパースまたは検証に失敗しました: {e}")
-            # フォールバックとして、raw応答をdialogueに入れる
-            return UserResponse(
-                dialogue=raw_response
-            )
+            return UserResponse(dialogue=raw_response)

@@ -31,7 +31,7 @@ class ConcreteUnderstanding:
         self.current_estimation: Optional[abstract_recognition_schema.abstract_recognition_response] = None
         self.history: List[Dict[str, Any]] = []
 
-    def start_inference(self, field_info_input: str) -> Optional[abstract_recognition_schema.abstract_recognition_response]:
+    def start_inference(self, field_info_input: str) -> (Optional[abstract_recognition_schema.abstract_recognition_response], Optional[List[Dict[str, Any]]]):
         """
         初期の状況情報を用いて推論プロセスを開始します。
         これには、RAGシステムのための高品質なクエリの作成、経験の検索と評価、
@@ -41,7 +41,7 @@ class ConcreteUnderstanding:
             field_info_input: 初期の状況や場面の情報。
 
         Returns:
-            感情と思考の初期推定値。失敗した場合はNone。
+            感情と思考の初期推定値と、検索された経験のリストのタプル。失敗した場合は(None, None)。
         """
         self.field_info = field_info_input
         
@@ -56,7 +56,7 @@ class ConcreteUnderstanding:
         print("初期推定を開始中...")
         self._run_estimation()
         
-        return self.current_estimation
+        return self.current_estimation, self.experience
 
     def _create_rag_query(self, field_info_input: str) -> str:
         """
