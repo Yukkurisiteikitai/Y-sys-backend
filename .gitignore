@@ -1,8 +1,13 @@
+# my_project
+session_response.json
+faiss_metadata.json
 models
 .venv
+
+
+# pythons
+.mypy_cache/
 __pycache__/
-lm_studio_rag/__pycache__
-faiss_metadata.json
 .DS_Store
 .pyc
 chroma_db
