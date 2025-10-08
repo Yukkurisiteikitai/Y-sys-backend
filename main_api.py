@@ -11,10 +11,16 @@ from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 from concurrent.futures import ThreadPoolExecutor
 
+
+
+
+
 # --- スレッドプール Executor ---
 # CPUバウンドな処理(LLM推論など)を非同期に実行するための専用Executor
 # デフォルトのExecutorはスレッド数が少なく、枯渇する可能性があるため、十分な数を確保
 inference_executor = ThreadPoolExecutor(max_workers=100)
+
+
 
 # --- データモデル (仕様書 v1.0 より) ---
 
@@ -199,6 +205,24 @@ app = FastAPI(
     version="1.0",
     description="ユーザーの思考プロセスをストリーミング形式で返却するAPI"
 )
+# --- cors ---
+from fastapi.middleware.cors import CORSMiddleware
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost",
+    "http://localhost:8080",
+    "http://localhost:8010",
+    "127.0.0.1:50760"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # セッション情報を保持するためのシンプルなインメモリ辞書
 sessions: Dict[str, SessionResponse] = {}
@@ -325,7 +349,7 @@ async def stream_message(session_id: str, request: MessageRequest):
             error_data = {"code": "INTERNAL_ERROR", "message": str(e), "timestamp": datetime.now().isoformat()}
             # SSEではエラー時にHTTPステータスコードを変更できないため、
             # 'error'イベントを送信し、クライアント側で再試行などを制御する
-            yield {"event": "error", "data": json.dumps(error_data), "retry": 10000} # retryはクライアントへの再接続推奨時間(ms)
+            yield {"event": "error", "data": error_data, "retry": 10000} # retryはクライアントへの再接続推奨時間(ms)
             yield {"event": "stream_end", "data": {"status": "error", "timestamp": datetime.now().isoformat()}}
         
     return EventSourceResponse(event_generator())
