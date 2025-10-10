@@ -56,5 +56,9 @@ def run_test():
         print(f"   [UNEXPECTED ERROR] An error occurred: {e}")
 
 
+import time
 if __name__ == "__main__":
+    start_time = time.time()
     run_test()
+    end_time = time.time()
+    print("end_role:{:.4f}".format(end_time-start_time))
