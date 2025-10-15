@@ -7,6 +7,7 @@ session_response.json
 load_test_results.json
 sample_test_data.json
 server.log
+stream_response.txt
 log/
 
 # pythons
