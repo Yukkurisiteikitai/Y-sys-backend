@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 from concurrent.futures import ThreadPoolExecutor
@@ -236,7 +236,7 @@ async def create_session(request: SessionRequest):
     return new_session
 
 @app.post("/api/v1/sessions/{session_id}/messages/stream")
-async def stream_message(session_id: str, request: MessageRequest):
+async def stream_message(session_id: str, request: MessageRequest, http_request: Request):
     """ユーザーメッセージを送信し、ストリーミング形式で応答を受け取ります。"""
     session = sessions.get(session_id)
     if not session:
@@ -344,6 +344,11 @@ async def stream_message(session_id: str, request: MessageRequest):
             yield {"event": "stream_end", "data": {"status": "complete", "timestamp": datetime.now().isoformat()}}
             await asyncio.sleep(0)
 
+        except asyncio.CancelledError:
+            print(f"Client disconnected, cleaning up session: {session_id}")
+            if session_id in sessions:
+                del sessions[session_id]
+                print(f"Session {session_id} deleted.")
         except Exception as e:
             error_data = {"code": "INTERNAL_ERROR", "message": str(e), "timestamp": datetime.now().isoformat()}
             # SSEではエラー時にHTTPステータスコードを変更できないため、
