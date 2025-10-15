@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from pydantic import BaseModel, Field
 from sse_starlette.sse import EventSourceResponse
 from concurrent.futures import ThreadPoolExecutor
@@ -174,15 +174,14 @@ from tqdm import tqdm
 def setup_storage() -> RAGStorage:
     """RAGStorageを初期化し、サンプルデータを投入する"""
     print("RAGストレージを初期化")
-    storage = RAGStorage(USE_MEMORY_RUN=False) # ファイル保存あり
+    storage = RAGStorage(USE_MEMORY_RUN=True) # ファイル保存あり
 
     print("テスト経験データをデータベースに追加")
-    sample_experience_data = [
-        "幼少期に、周囲に家がある田舎と都会の中間くらいの都市で育った。小学4年生の時にTokyo Game Showに行ったことがきっかけで、ゲーム制作に興味を持ち、3ヶ月かけてクソゲーを作った。",
-        "小学校の先生の影響を強く受け、作れば自分の欲を叶えられるという考え方を学んだ。周囲からは「聞き魔」と呼ばれる。",
-        "強迫観念があり、謎の天使と悪魔のような存在が頭の中に現れる。社会的にまずいと思われる可能性があるため、他人にはあまり話さない。",
-    ]
-    
+    with open("sample_test_data.json","r",encoding="utf-8")as f:
+        data = json.load(f)
+    sample_experience_data = data["sample_experience_data"]
+
+
     for d in tqdm(sample_experience_data, desc="Load-test-data",ncols=120, ascii="-="):
         storage.save_experience_data(
             text=d,
@@ -237,7 +236,7 @@ async def create_session(request: SessionRequest):
     return new_session
 
 @app.post("/api/v1/sessions/{session_id}/messages/stream")
-async def stream_message(session_id: str, request: MessageRequest):
+async def stream_message(session_id: str, request: MessageRequest, http_request: Request):
     """ユーザーメッセージを送信し、ストリーミング形式で応答を受け取ります。"""
     session = sessions.get(session_id)
     if not session:
@@ -345,6 +344,11 @@ async def stream_message(session_id: str, request: MessageRequest):
             yield {"event": "stream_end", "data": {"status": "complete", "timestamp": datetime.now().isoformat()}}
             await asyncio.sleep(0)
 
+        except asyncio.CancelledError:
+            print(f"Client disconnected, cleaning up session: {session_id}")
+            if session_id in sessions:
+                del sessions[session_id]
+                print(f"Session {session_id} deleted.")
         except Exception as e:
             error_data = {"code": "INTERNAL_ERROR", "message": str(e), "timestamp": datetime.now().isoformat()}
             # SSEではエラー時にHTTPステータスコードを変更できないため、
@@ -401,5 +405,6 @@ async def delete_session(session_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    print("APIサーバーを起動します: http://127.0.0.1:8000")
+    from colorful_print import color_set_print
+    print(f"Backend -> API-SERVER:{color_set_print('Boot ON','blue')} : http://127.0.0.1:8000")
     uvicorn.run(app, host="127.0.0.1", port=8000)
