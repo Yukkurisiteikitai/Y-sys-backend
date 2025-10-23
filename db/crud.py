@@ -213,6 +213,7 @@ async def get_thread(db: AsyncSession, thread_id: str, include_messages: bool = 
                     )
                 )
     result = await db.execute(query)
+    # print(f"[test->get_thread]:{type(result.scalars().first())}")
     return result.scalars().first()
 
 async def get_user_threads(db: AsyncSession, user_id: str, skip: int = 0, limit: int = request_db_contexts_limit):

@@ -9,6 +9,7 @@ sample_test_data.json
 server.log
 stream_response.txt
 log/
+.env
 
 # pythons
 .mypy_cache/
