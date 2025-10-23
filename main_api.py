@@ -72,8 +72,8 @@ app.dependency_overrides[get_response_gen] = lambda: response_gen
 # ========================================
 # ルーター登録
 # ========================================
-from api.routers import sessions
-app.include_router(sessions.router, prefix="/api/v1/sessions", tags=["sessions"])
+from api.routers import threads
+app.include_router(threads.router, prefix="/api/v1/threads", tags=["threads"])
 
 # ========================================
 # 起動時処理

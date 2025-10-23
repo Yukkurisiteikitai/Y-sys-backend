@@ -1,17 +1,19 @@
-import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
+import uuid
 
-class SessionRequest(BaseModel):
-    user_id: Optional[str] = None
-    metadata: Dict[str, Any]
+# Schemas for the public API contract
 
-class SessionResponse(BaseModel):
-    session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    thread_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=datetime.now)
-    expires_at: datetime = Field(default_factory=lambda: datetime.now() + timedelta(hours=24))
+class ThreadCreate(BaseModel):
+    user_id: str # In a real app, this would come from an auth token
+    title: Optional[str] = None
+
+class ThreadResponse(BaseModel):
+    thread_id: str
+    user_id: str
+    title: Optional[str] = None
+    created_at: datetime
 
 class MessageRequest(BaseModel):
     message: str
