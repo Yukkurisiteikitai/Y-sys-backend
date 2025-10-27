@@ -100,7 +100,7 @@ async def create_thread(
 @router.post("/{thread_id}/messages/stream") 
 async def stream_message(
     thread_id: str, 
-    request: api_schemas.MessageRequest, 
+    message_req: api_schemas.MessageRequest, 
     http_request: Request,
     db: DBSession,
     concrete_process: Annotated[ConcreteUnderstanding, Depends(get_concrete_process)],
@@ -120,9 +120,18 @@ async def stream_message(
         try:
             # The logic from the old stream_message endpoint goes here.
             # It is adapted to use thread_id instead of session_id.
+            # Check if client already disconnected before starting heavy work
+            if await http_request.is_disconnected():
+                print(f"Client disconnected before abstract recognition: {thread_id}")
+                return
             yield {"event": "phase_start", "data": {"phase": "abstract_recognition", "timestamp": datetime.now().isoformat()}}
             await asyncio.sleep(0)
-            abstract_cli_result, retrieved_experiences = await loop.run_in_executor(inference_executor, concrete_process.start_inference, request.message)
+            # run inference in threadpool
+            abstract_cli_result, retrieved_experiences = await loop.run_in_executor(inference_executor, concrete_process.start_inference, message_req.message)
+            # If client disconnected while inference was running, stop early
+            if await http_request.is_disconnected():
+                print(f"Client disconnected after abstract recognition: {thread_id}")
+                return
             if not abstract_cli_result:
                 raise Exception("Abstract recognition failed to produce a result.")
             abstract_api_result = api_schemas.AbstractRecognitionResult(
@@ -150,17 +159,26 @@ async def stream_message(
             concrete_result = api_schemas.ConcreteUnderstandingResult(related_episodes=episodes, total_retrieved=len(episodes))
             yield {"event": "concrete_links", "data": concrete_result.model_dump()}
             await asyncio.sleep(0)
+            # check disconnection after sending concrete links
+            if await http_request.is_disconnected():
+                print(f"Client disconnected after concrete links: {thread_id}")
+                return
             yield {"event": "phase_complete", "data": {"phase": "concrete_understanding", "duration_ms": (datetime.now() - start_time).total_seconds() * 1000}}
             await asyncio.sleep(0)
             yield {"event": "phase_start", "data": {"phase": "response_generation", "timestamp": datetime.now().isoformat()}}
             await asyncio.sleep(0)
+            # prepare episode data
             concrete_info = EpisodeData(
                 episode_id=str(uuid.uuid4()), thread_id=thread_id, timestamp=datetime.now(),
                 sequence_in_thread=0, source_type="user_api_input", author="user",
-                content_type="situational_description", text_content=request.message,
-                status="active", sensitivity_level=request.sensitivity_level
+                content_type="situational_description", text_content=message_req.message,
+                status="active", sensitivity_level=message_req.sensitivity_level
             )
-            final_user_response = await loop.run_in_executor(inference_executor, response_gen.generate, abstract_cli_result, concrete_info, request.message)
+            # check disconnection before starting response generation
+            if await http_request.is_disconnected():
+                print(f"Client disconnected before response generation: {thread_id}")
+                return
+            final_user_response = await loop.run_in_executor(inference_executor, response_gen.generate, abstract_cli_result, concrete_info, message_req.message)
             parsed_data = parse_final_user_response(final_user_response.dialogue) if "DECISION:" in final_user_response.dialogue or "ACTION:" in final_user_response.dialogue else {
                 "inferred_decision": final_user_response.inferred_decision,
                 "inferred_action": final_user_response.inferred_action,
@@ -196,8 +214,18 @@ async def stream_message(
             yield {"event": "stream_end", "data": {"status": "complete", "timestamp": datetime.now().isoformat()}}
             await asyncio.sleep(0)
         except asyncio.CancelledError:
-            print(f"Client disconnected from thread: {thread_id}")
+            # Client likely disconnected; end silently
+            print(f"Stream cancelled (likely client disconnect) for thread: {thread_id}")
+            return
         except Exception as e:
+            # If client disconnected, avoid sending internal error events
+            try:
+                if await http_request.is_disconnected():
+                    print(f"Client disconnected during error for thread: {thread_id}: {e}")
+                    return
+            except Exception:
+                # If checking disconnection fails, continue to send error event
+                pass
             error_data = {"code": "INTERNAL_ERROR", "message": str(e), "timestamp": datetime.now().isoformat()}
             yield {"event": "error", "data": error_data, "retry": 10000}
             yield {"event": "stream_end", "data": {"status": "error", "timestamp": datetime.now().isoformat()}}
