@@ -12,10 +12,11 @@ class LMStudioClient:
     Uses requests to talk to /v1/chat/completions and /v1/embeddings.
     """
 
-    def __init__(self, base_url: str = LM_STUDIO_BASE_URL, api_key: str = LM_STUDIO_API_KEY, timeout: int = 30):
+    def __init__(self, base_url: str = LM_STUDIO_BASE_URL, api_key: str = LM_STUDIO_API_KEY, timeout: int = 30, model_name: str = "gemma-3-1b-it"):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
+        self.model_name = model_name
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -47,7 +48,20 @@ class LMStudioClient:
         return embeddings
 
     # --- chat completions (for generating RAG responses or classification via prompt) ---
-    def chat(self, messages: List[Dict[str, str]], model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 512) -> Dict[str, Any]:
+    def chat(self, messages: List[Dict[str, str]], model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 512, force_system: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Send a chat request. If `force_system` is provided, it will be inserted as the first
+        system message and any other system messages in `messages` will be removed to
+        prevent user-supplied system prompts from overriding it.
+        Returns the raw LM Studio response (dict).
+        """
+        # enforce system prompt if requested
+        if force_system:
+            filtered = [m for m in messages if m.get("role") != "system"]
+            messages = [{"role": "system", "content": force_system}] + filtered
+        if model is "gpt-4o-mini":
+            model = self.model_name  # default to configured model
+        
         payload = {
             "model": model,
             "messages": messages,
@@ -55,7 +69,6 @@ class LMStudioClient:
             "max_tokens": max_tokens
         }
         resp = self._post("/v1/chat/completions", payload)
-        # assumed response: {'choices': [{'message': {'role':'assistant','content':'...'}}], ...}
         return resp
 
     def classify_content_via_llm(self, text: str, labels: List[str] = ["personality", "experience"]) -> Dict[str, Any]:
@@ -84,15 +97,45 @@ class LMStudioClient:
             # fallback: return naive default if parsing fails
             return {"label": "personality", "score": 0.5, "reason": "parsing_failed; returned fallback"}
 
-    def generate_response(self, query: str, context: str, model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 512) -> str:
+    def generate_response(self, query: str, context: str, model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 512) -> Dict[str, Any]:
         """
-        Simple RAG-style prompt: system prompt sets behavior, context is appended.
+        RAG-style response generator that requests a structured JSON output from the LLM.
+        Returns a dict with keys: `answer` (str), `evidence` (list), `confidence` (float),
+        and optionally `reason` on failure.
         """
-        system = "あなたは知識ベースと会話文脈を統合して正確で簡潔な回答を作成するアシスタントです。"
-        user = f"Context:\n{context}\n\nQuestion:\n{query}\n\nAnswer concisely and cite context snippets if helpful."
+        system = (
+            "あなたは知識ベースと会話文脈を統合して正確で簡潔な回答を作成するアシスタントです。"
+            " 出力は必ずJSON形式で返してください。フォーマット:"
+            " {\"answer\":\"...\", \"evidence\":[{\"id\":\"...\",\"text\":\"...\",\"score\":0.0}], \"confidence\":0.0}"
+        )
+
+        user = f"Context:\n{context}\n\nQuestion:\n{query}\n\nReturn JSON as specified."
         messages = [
             {"role": "system", "content": system},
             {"role": "user", "content": user}
         ]
-        resp = self.chat(messages, model=model, temperature=temperature, max_tokens=max_tokens)
-        return resp["choices"][0]["message"]["content"]
+
+        resp = self.chat(messages, model=model, temperature=temperature, max_tokens=max_tokens, force_system=system)
+
+        try:
+            assistant = resp["choices"][0]["message"]["content"]
+            import json
+            parsed = json.loads(assistant)
+            # Ensure keys exist
+            return {
+                "answer": parsed.get("answer", ""),
+                "evidence": parsed.get("evidence", []),
+                "confidence": float(parsed.get("confidence", 0.0)),
+            }
+        except Exception:
+            # fallback: return best-effort plain text answer plus metadata
+            try:
+                fallback_text = resp["choices"][0]["message"]["content"]
+            except Exception:
+                fallback_text = ""
+            return {
+                "answer": fallback_text,
+                "evidence": [],
+                "confidence": 0.0,
+                "reason": "parsing_failed"
+            }

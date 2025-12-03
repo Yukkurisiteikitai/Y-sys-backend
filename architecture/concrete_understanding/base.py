@@ -6,7 +6,7 @@ from lm_studio_rag.lm_studio_client import LMStudioClient
 from utils.yaml_load import load_yaml
 from . import schema_architecture as schema
 from ..abstract_recognition import schama_architecture as abstract_recognition_schema
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from pydantic import ValidationError
 
 class ConcreteUnderstanding:
@@ -31,7 +31,7 @@ class ConcreteUnderstanding:
         self.current_estimation: Optional[abstract_recognition_schema.abstract_recognition_response] = None
         self.history: List[Dict[str, Any]] = []
 
-    def start_inference(self, field_info_input: str) -> (Optional[abstract_recognition_schema.abstract_recognition_response], Optional[List[Dict[str, Any]]]):
+    def start_inference(self, field_info_input: str) -> Tuple[Optional[abstract_recognition_schema.abstract_recognition_response], Optional[List[Dict[str, Any]]]]:
         """
         初期の状況情報を用いて推論プロセスを開始します。
         これには、RAGシステムのための高品質なクエリの作成、経験の検索と評価、
@@ -74,11 +74,11 @@ class ConcreteUnderstanding:
         """
         
         # LMを使用してクエリを生成します。
-        generated_query = self.lm.generate_response(
+        resp = self.lm.generate_response(
             query=prompt,
-            context="", # この部分には追加のコンテキストは不要
-            model="gemma-3-1b-it"
+            context="" # この部分には追加のコンテキストは不要
         )
+        generated_query = resp.get("answer", "")
         
         print(f"生成されたRAGクエリ: {generated_query}")
         return generated_query
@@ -124,8 +124,10 @@ class ConcreteUnderstanding:
             emotion_query = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような感情の動きをするのかを予測してください。"
             think_query = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような思考をするのかを予測してくだい。"
 
-        emostion_result: str = self.lm.generate_response(emotion_query, context_texts, "gemma-3-1b-it")
-        think_result: str = self.lm.generate_response(think_query, context_texts, "gemma-3-1b-it")
+        emotion_resp = self.lm.generate_response(emotion_query, context_texts)
+        emostion_result: str = emotion_resp.get("answer", "")
+        think_resp = self.lm.generate_response(think_query, context_texts)
+        think_result: str = think_resp.get("answer", "")
         
         print("RAGの回答 (感情):\n", emostion_result)
         print("RAGの回答 (思考):\n", think_result)
@@ -249,7 +251,7 @@ class ConcreteUnderstanding:
         return thought_episode, experience_episode
 
 
-def architecture_base(storage: RAGStorage, field_info_input: str) -> Optional[abstract_recognition_schema.abstract_recognition_response]:
+def architecture_base(storage: RAGStorage, field_info_input: str) -> Tuple[Optional[abstract_recognition_schema.abstract_recognition_response], Optional[List[Dict[str, Any]]]]:
     # この関数は後方互換性のために維持されています。
     # 対話的なループなしで、一度だけの推定を実行します。
     process = ConcreteUnderstanding(storage)

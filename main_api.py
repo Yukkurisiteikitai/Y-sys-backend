@@ -33,7 +33,7 @@ from architecture.concrete_understanding.base import ConcreteUnderstanding
 from architecture.user_response.generator import UserResponseGenerator
 
 storage = RAGStorage(USE_MEMORY_RUN=settings.USE_MEMORY_STORAGE)
-lm_client = LMStudioClient(base_url=settings.LM_STUDIO_BASE_URL)
+lm_client = LMStudioClient(base_url=settings.LM_STUDIO_BASE_URL,model_name=settings.LM_STUDIO_MODEL)
 concrete_process = ConcreteUnderstanding(storage=storage, lm_client=lm_client)
 response_gen = UserResponseGenerator(lm_client=lm_client)
 

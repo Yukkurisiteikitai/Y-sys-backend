@@ -19,11 +19,15 @@ def artechture_base(storage: RAGStorage, field_info_input: str) -> Optional[scha
     # result_schama = schama.abstract_recognition_response()
     
     question_query:str = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような感情の動きをするのかを予測してください。"
-    emostion_result:str = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
+    emostion_resp: Dict[str, Any] = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.")
+    emostion_result: str = emostion_resp.get("answer", "")
+    
     question_query:str = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような思考をするのかを予測してくだい。"
-    think_result:str = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
-    print("RAG answer:\n", emostion_result)
-    print("RAG answer:\n", think_result)
+    think_resp: Dict[str, Any] = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.")
+    think_result: str = think_resp.get("answer", "")
+    
+    print("RAG answer (emotion):\n", emostion_result)
+    print("RAG answer (think):\n", think_result)
 
     
     try:
