@@ -1,9 +1,12 @@
 # architecture/user_response/generator.py
 import re
+from typing import Optional
 from lm_studio_rag.lm_studio_client import LMStudioClient
 from .schema import UserResponse
 from ..abstract_recognition.schama_architecture import abstract_recognition_response
 from ..concrete_understanding.schema_architecture import EpisodeData
+from utils.lm_response_helper import extract_answer_or_default
+from analysis.prompt_engineering_framework import generate_prompt, PromptVariant
 from pydantic import ValidationError
 
 class UserResponseGenerator:
@@ -11,19 +14,42 @@ class UserResponseGenerator:
     抽象的理解（デフォルメ）と具象的理解（具現化）を統合し、
     ユーザーの意思決定、行動、そして最終的な応答を推論するクラス。
     """
-    def __init__(self, lm_client: LMStudioClient = None):
+    def __init__(self, lm_client: Optional[LMStudioClient] = None, prompt_variant: PromptVariant = PromptVariant.BASELINE):
         self.lm = lm_client if lm_client else LMStudioClient()
+        self.prompt_variant = prompt_variant
 
     def generate(
         self,
         abstract_info: abstract_recognition_response,
         concrete_info: EpisodeData,
-        field_info: str
+        field_info: str,
+        prompt_variant: Optional[PromptVariant] = None
     ) -> UserResponse:
         """
         与えられた抽象的・具象的情報から、最終的なユーザー応答を生成します。
+        
+        Args:
+            abstract_info: 抽象的理解（感情・思考の予測）
+            concrete_info: 具象的理解（状況固有の情報）
+            field_info: ユーザーの現在の状況
+            prompt_variant: 使用するプロンプトバリアント。Noneの場合はクラスの設定を使用
         """
-        context = f"""
+        # プロンプトバリアントの決定
+        variant = prompt_variant or self.prompt_variant
+        
+        # プロンプトフレームワークを使用してコンテキストを生成
+        if variant != PromptVariant.BASELINE:
+            context = generate_prompt(
+                variant=variant,
+                abstract_info={
+                    "emotion_estimation": abstract_info.emotion_estimation,
+                    "think_estimation": abstract_info.think_estimation
+                },
+                field_info=field_info
+            )
+        else:
+            # 従来のBASELINEプロンプト
+            context = f"""
         # 指示
         あなたは、これから与えられる情報を持つ「人物そのもの」です。
         あなた自身の過去の経験（抽象的理解）と、現在の具体的な状況（具象的理解）に基づいて、
@@ -60,7 +86,7 @@ class UserResponseGenerator:
             context=context,
             temperature=0.2
         )
-        raw_response = resp.get("answer", "")
+        raw_response = extract_answer_or_default(resp)
         print(f"「LLMの回答」@@@\n{raw_response}\n@@@")
 
         try:

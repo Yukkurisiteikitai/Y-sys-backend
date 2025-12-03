@@ -2,7 +2,7 @@
 import requests
 import logging
 from typing import List, Dict, Any, Optional
-from .config import LM_STUDIO_BASE_URL, LM_STUDIO_API_KEY
+from .config import LM_STUDIO_BASE_URL, LM_STUDIO_API_KEY, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS
 
 logger = logging.getLogger("lmstudio")
 
@@ -12,11 +12,11 @@ class LMStudioClient:
     Uses requests to talk to /v1/chat/completions and /v1/embeddings.
     """
 
-    def __init__(self, base_url: str = LM_STUDIO_BASE_URL, api_key: str = LM_STUDIO_API_KEY, timeout: int = 30, model_name: str = "gemma-3-1b-it"):
+    def __init__(self, base_url: str = LM_STUDIO_BASE_URL, api_key: str = LM_STUDIO_API_KEY, timeout: int = 30, model_name: Optional[str] = None):
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.timeout = timeout
-        self.model_name = model_name
+        self.model_name = model_name or DEFAULT_MODEL
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -48,19 +48,22 @@ class LMStudioClient:
         return embeddings
 
     # --- chat completions (for generating RAG responses or classification via prompt) ---
-    def chat(self, messages: List[Dict[str, str]], model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 512, force_system: Optional[str] = None) -> Dict[str, Any]:
+    def chat(self, messages: List[Dict[str, str]], model: Optional[str] = None, temperature: Optional[float] = None, max_tokens: Optional[int] = None, force_system: Optional[str] = None) -> Dict[str, Any]:
         """
         Send a chat request. If `force_system` is provided, it will be inserted as the first
         system message and any other system messages in `messages` will be removed to
         prevent user-supplied system prompts from overriding it.
         Returns the raw LM Studio response (dict).
         """
+        # Use defaults if not specified
+        model = model or self.model_name
+        temperature = temperature if temperature is not None else DEFAULT_TEMPERATURE
+        max_tokens = max_tokens or DEFAULT_MAX_TOKENS
+        
         # enforce system prompt if requested
         if force_system:
             filtered = [m for m in messages if m.get("role") != "system"]
             messages = [{"role": "system", "content": force_system}] + filtered
-        if model is "gpt-4o-mini":
-            model = self.model_name  # default to configured model
         
         payload = {
             "model": model,
@@ -97,12 +100,17 @@ class LMStudioClient:
             # fallback: return naive default if parsing fails
             return {"label": "personality", "score": 0.5, "reason": "parsing_failed; returned fallback"}
 
-    def generate_response(self, query: str, context: str, model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 512) -> Dict[str, Any]:
+    def generate_response(self, query: str, context: str, model: Optional[str] = None, temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> Dict[str, Any]:
         """
         RAG-style response generator that requests a structured JSON output from the LLM.
         Returns a dict with keys: `answer` (str), `evidence` (list), `confidence` (float),
         and optionally `reason` on failure.
         """
+        # Use defaults if not specified
+        model = model or self.model_name
+        temperature = temperature if temperature is not None else DEFAULT_TEMPERATURE
+        max_tokens = max_tokens or DEFAULT_MAX_TOKENS
+        
         system = (
             "あなたは知識ベースと会話文脈を統合して正確で簡潔な回答を作成するアシスタントです。"
             " 出力は必ずJSON形式で返してください。フォーマット:"

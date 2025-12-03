@@ -324,6 +324,93 @@ def example_frontend_code():
     return code
 
 
+# ===== エラーハンドリング戦略 =====
+"""
+エラーが発生した場合のフロントエンド向けガイドライン
+
+## 1. エラーイベント (`event: error`)
+
+エラーが発生した場合、バックエンドは以下の形式で `error` イベントを送信します：
+
+```
+event: error
+data: {
+  "phase": "abstract_recognition",  # エラーが発生したフェーズ
+  "error_code": "LM_RESPONSE_FAILED",
+  "message": "言語モデルからのレスポンスが無効です",
+  "timestamp": "2025-12-02T12:00:00Z"
+}
+```
+
+## 2. フロントエンドの対応手順
+
+### ステップ 1: エラーメッセージ表示
+- ユーザーに対して分かりやすいエラーメッセージを表示
+- 技術的なエラーコードは画面下部に小さく表示（デバッグ用）
+- ローディング中のインジケーター（"Thinking..."等）は即座に停止
+
+### ステップ 2: ユーザー操作の提示
+エラーの種類に応じて、以下の選択肢を表示：
+
+**リカバリー可能なエラー（LM_RESPONSE_FAILED など）**
+- 「リトライ」ボタン：同じクエリで再度処理を開始
+- 「質問を編集」ボタン：入力を修正して再実行
+
+**リカバリー不可能なエラー（DATABASE_ERROR など）**
+- 「ホームに戻る」ボタン
+- 「サポートに連絡」リンク
+- エラーログの自動送信オプション
+
+### ステップ 3: ログとトレーシング
+- `error_code` をローカル storage に記録
+- 発生時刻とフェーズ情報を含める
+- 複数回同じエラーが発生した場合はユーザーに通知
+
+## 3. エラー種別と推奨対応
+
+| エラーコード | フェーズ | 原因 | リトライ可能 |
+|-----------|--------|------|---------|
+| `LM_RESPONSE_FAILED` | user_response_generation | LM Studio のレスポンスが無効 | ✅ はい |
+| `RAG_QUERY_FAILED` | abstract_recognition | RAG検索が失敗 | ✅ はい |
+| `DATABASE_ERROR` | any | データベース接続エラー | ❌ いいえ |
+| `INVALID_INPUT` | any | 入力データの形式が不正 | ❌ いいえ |
+| `TIMEOUT` | any | タイムアウト（処理時間超過） | ✅ はい |
+
+## 4. リトライ戦略
+
+```javascript
+async function retryWithBackoff(fn, maxAttempts = 3, initialDelayMs = 1000) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            if (attempt === maxAttempts) throw error;
+            
+            const delayMs = initialDelayMs * Math.pow(2, attempt - 1);
+            console.log(`Retry attempt ${attempt}/${maxAttempts} after ${delayMs}ms`);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+    }
+}
+
+// 使用例
+retryWithBackoff(() => fetchStreamResponse(threadId, message));
+```
+
+## 5. タイムアウト設定
+
+- **推奨クライアント側タイムアウト**: 60秒
+- **フェーズごとの予想時間**:
+  - `abstract_recognition`: 5-10秒
+  - `concrete_understanding`: 5-15秒
+  - `user_response_generation`: 10-20秒
+  - 合計: 20-45秒（通常）
+
+タイムアウト時は automatic retry を実施し、3回連続でタイムアウトした場合はユーザーに通知。
+
+"""
+
+
 if __name__ == "__main__":
     print("=== API スキーマドキュメント ===")
     print(example_frontend_code())

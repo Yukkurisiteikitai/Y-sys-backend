@@ -6,6 +6,11 @@ LM_STUDIO_BASE_URL = os.getenv("LM_STUDIO_BASE_URL", "http://localhost:1234")  #
 LM_STUDIO_API_KEY = os.getenv("LM_STUDIO_API_KEY", "your_api_key_here")
 LM_STUDIO_MODEL_NAME = os.getenv("LM_STUDIO_MODEL", "gemma-3-1b-it")
 
+# LM Studio デフォルト設定
+DEFAULT_MODEL = LM_STUDIO_MODEL_NAME
+DEFAULT_TEMPERATURE = 0.2
+DEFAULT_MAX_TOKENS = 512
+
 # Embedding model to use for sentence-transformers
 EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
 

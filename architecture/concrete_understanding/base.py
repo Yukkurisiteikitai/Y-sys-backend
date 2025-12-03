@@ -4,6 +4,7 @@ from datetime import datetime
 from lm_studio_rag.storage import RAGStorage
 from lm_studio_rag.lm_studio_client import LMStudioClient
 from utils.yaml_load import load_yaml
+from utils.lm_response_helper import extract_answer_or_default
 from . import schema_architecture as schema
 from ..abstract_recognition import schama_architecture as abstract_recognition_schema
 from typing import List, Optional, Dict, Any, Tuple
@@ -78,7 +79,7 @@ class ConcreteUnderstanding:
             query=prompt,
             context="" # この部分には追加のコンテキストは不要
         )
-        generated_query = resp.get("answer", "")
+        generated_query = extract_answer_or_default(resp)
         
         print(f"生成されたRAGクエリ: {generated_query}")
         return generated_query
@@ -125,9 +126,9 @@ class ConcreteUnderstanding:
             think_query = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような思考をするのかを予測してくだい。"
 
         emotion_resp = self.lm.generate_response(emotion_query, context_texts)
-        emostion_result: str = emotion_resp.get("answer", "")
+        emostion_result: str = extract_answer_or_default(emotion_resp)
         think_resp = self.lm.generate_response(think_query, context_texts)
-        think_result: str = think_resp.get("answer", "")
+        think_result: str = extract_answer_or_default(think_resp)
         
         print("RAGの回答 (感情):\n", emostion_result)
         print("RAGの回答 (思考):\n", think_result)
