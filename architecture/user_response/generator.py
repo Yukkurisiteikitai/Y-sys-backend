@@ -18,6 +18,26 @@ class UserResponseGenerator:
         self.lm = lm_client if lm_client else LMStudioClient()
         self.prompt_variant = prompt_variant
 
+    def _format_concrete_info(self, concrete_info: Optional[EpisodeData]) -> str:
+        """
+        具象的理解（エピソードデータ）をテキスト形式にフォーマットする。
+        LLMが理解しやすいように、関連する経験情報を整形する。
+        """
+        if not concrete_info or not concrete_info.related_episode_ids:
+            return "この状況に直接関連する過去の具体的な経験情報はありません。"
+        
+        episodes_text: list[str] = []
+        for episode in concrete_info.related_episode_ids[:3]:  # 最多3件まで
+            if hasattr(episode, 'episode_id'):
+                episodes_text.append(f"- エピソード ID: {episode.episode_id}")
+            if hasattr(episode, 'relationship_type'):
+                episodes_text.append(f"  関係性: {episode.relationship_type}")
+        
+        if not episodes_text:
+            return "この状況に直接関連する過去の具体的な経験情報はありません。"
+        
+        return "この状況に関連する過去の具体的な経験:\n" + "\n".join(episodes_text)
+
     def generate(
         self,
         abstract_info: abstract_recognition_response,
@@ -49,6 +69,7 @@ class UserResponseGenerator:
             )
         else:
             # 従来のBASELINEプロンプト
+            concrete_info_text = self._format_concrete_info(concrete_info)
             context = f"""
         # 指示
         あなたは、これから与えられる情報を持つ「人物そのもの」です。
@@ -56,12 +77,15 @@ class UserResponseGenerator:
         あたかもあなたがその人物であるかのように、一人称視点（「私」）で思考し、応答してください。
 
         # 入力情報
-        ## 1. ユーザーの現在の状況 (field_info)
+        ## 1. ユーザーの現在の状況
         {field_info}
 
         ## 2. 抽象的理解 (過去の経験に基づく感情と思考の予測)
         - 予測される感情: {abstract_info.emotion_estimation}
         - 予測される思考: {abstract_info.think_estimation}
+
+        ## 3. 具象的理解 (現在の状況に関連する具体的な経験)
+        {concrete_info_text}
 
         # 出力形式
         以下のフォーマットに従って、思考プロセスと最終出力を記述してください。

@@ -125,9 +125,9 @@ class ConcreteUnderstanding:
             emotion_query = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような感情の動きをするのかを予測してください。"
             think_query = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような思考をするのかを予測してくだい。"
 
-        emotion_resp = self.lm.generate_response(emotion_query, context_texts)
+        emotion_resp = self.lm.generate_response(query=emotion_query, context=context_texts)
         emostion_result: str = extract_answer_or_default(emotion_resp)
-        think_resp = self.lm.generate_response(think_query, context_texts)
+        think_resp = self.lm.generate_response(query=think_query, context=context_texts)
         think_result: str = extract_answer_or_default(think_resp)
         
         print("RAGの回答 (感情):\n", emostion_result)
