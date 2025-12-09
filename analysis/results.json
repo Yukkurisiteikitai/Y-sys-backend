@@ -1,0 +1,20 @@
+{
+  "sample_count": 23,
+  "distinct_1": 1.0,
+  "distinct_2": 1.0,
+  "distinct_3": 0.0,
+  "self_bleu": 0.0,
+  "common_patterns": {},
+  "response_length": {
+    "mean_words": 1.0434782608695652,
+    "stdev_words": 0.20851441405707477,
+    "min_words": 1,
+    "max_words": 2
+  },
+  "json_parse_success": 0.0,
+  "vocabulary": {
+    "unique_words": 24,
+    "total_words": 24,
+    "type_token_ratio": 1.0
+  }
+}

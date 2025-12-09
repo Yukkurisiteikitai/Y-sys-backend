@@ -1,9 +1,12 @@
 # architecture/user_response/generator.py
 import re
+from typing import Optional
 from lm_studio_rag.lm_studio_client import LMStudioClient
 from .schema import UserResponse
 from ..abstract_recognition.schama_architecture import abstract_recognition_response
 from ..concrete_understanding.schema_architecture import EpisodeData
+from utils.lm_response_helper import extract_answer_or_default
+from analysis.prompt_engineering_framework import generate_prompt, PromptVariant
 from pydantic import ValidationError
 
 class UserResponseGenerator:
@@ -11,55 +14,103 @@ class UserResponseGenerator:
     抽象的理解（デフォルメ）と具象的理解（具現化）を統合し、
     ユーザーの意思決定、行動、そして最終的な応答を推論するクラス。
     """
-    def __init__(self, lm_client: LMStudioClient = None):
+    def __init__(self, lm_client: Optional[LMStudioClient] = None, prompt_variant: PromptVariant = PromptVariant.BASELINE):
         self.lm = lm_client if lm_client else LMStudioClient()
+        self.prompt_variant = prompt_variant
+
+    def _format_concrete_info(self, concrete_info: Optional[EpisodeData]) -> str:
+        """
+        具象的理解（エピソードデータ）をテキスト形式にフォーマットする。
+        LLMが理解しやすいように、関連する経験情報を整形する。
+        """
+        if not concrete_info or not concrete_info.related_episode_ids:
+            return "この状況に直接関連する過去の具体的な経験情報はありません。"
+        
+        episodes_text: list[str] = []
+        for episode in concrete_info.related_episode_ids[:3]:  # 最多3件まで
+            if hasattr(episode, 'episode_id'):
+                episodes_text.append(f"- エピソード ID: {episode.episode_id}")
+            if hasattr(episode, 'relationship_type'):
+                episodes_text.append(f"  関係性: {episode.relationship_type}")
+        
+        if not episodes_text:
+            return "この状況に直接関連する過去の具体的な経験情報はありません。"
+        
+        return "この状況に関連する過去の具体的な経験:\n" + "\n".join(episodes_text)
 
     def generate(
         self,
         abstract_info: abstract_recognition_response,
-        concrete_info: EpisodeData, # concrete_understandingからの出力
-        field_info: str
+        concrete_info: EpisodeData,
+        field_info: str,
+        prompt_variant: Optional[PromptVariant] = None
     ) -> UserResponse:
         """
         与えられた抽象的・具象的情報から、最終的なユーザー応答を生成します。
+        
+        Args:
+            abstract_info: 抽象的理解（感情・思考の予測）
+            concrete_info: 具象的理解（状況固有の情報）
+            field_info: ユーザーの現在の状況
+            prompt_variant: 使用するプロンプトバリアント。Noneの場合はクラスの設定を使用
         """
-        context = f"""
+        # プロンプトバリアントの決定
+        variant = prompt_variant or self.prompt_variant
+        
+        # プロンプトフレームワークを使用してコンテキストを生成
+        if variant != PromptVariant.BASELINE:
+            context = generate_prompt(
+                variant=variant,
+                abstract_info={
+                    "emotion_estimation": abstract_info.emotion_estimation,
+                    "think_estimation": abstract_info.think_estimation
+                },
+                field_info=field_info
+            )
+        else:
+            # 従来のBASELINEプロンプト
+            concrete_info_text = self._format_concrete_info(concrete_info)
+            context = f"""
         # 指示
         あなたは、これから与えられる情報を持つ「人物そのもの」です。
-        あなた自身の過去の経験（抽象的理解）と、現在の具体的な状況（具象的理解）に基づいて、あたかもあなたがその人物であるかのように、一人称視点（「私」）で思考し、応答してください。
-        物語的、比喩的、詩的な表現は絶対に使用しないでください。
+        あなた自身の過去の経験（抽象的理解）と、現在の具体的な状況（具象的理解）に基づいて、
+        あたかもあなたがその人物であるかのように、一人称視点（「私」）で思考し、応答してください。
 
         # 入力情報
-        ## 1. ユーザーの現在の状況 (field_info)
+        ## 1. ユーザーの現在の状況
         {field_info}
 
         ## 2. 抽象的理解 (過去の経験に基づく感情と思考の予測)
         - 予測される感情: {abstract_info.emotion_estimation}
         - 予測される思考: {abstract_info.think_estimation}
 
+        ## 3. 具象的理解 (現在の状況に関連する具体的な経験)
+        {concrete_info_text}
+
         # 出力形式
-        以下のフォーマットに厳密に従って、思考プロセスと最終出力を記述してください。
+        以下のフォーマットに従って、思考プロセスと最終出力を記述してください。
 
         --- 思考プロセス ---
-        - **感情的トリガー (Emotional Trigger):** (あなたの応答の根底にある感情的要因を記述)
-        - **情報的インプット (Informational Input):** (過去の経験や現在の状況など、意思決定に利用した情報を記述)
-        - **思考の変遷 (Thought Process Shift):** (感情と情報がどのように組み合わさり、最終的な意思決定に至ったかの思考の流れを記述)
+        - **感情的トリガー (Emotional Trigger):** (あなたの応答の根底にある感情的要因)
+        - **情報的インプット (Informational Input):** (過去の経験や現在の状況など、意思決定に利用した情報)
+        - **思考の変遷 (Thought Process Shift):** (感情と情報がどのように組み合わさり、最終的な意思決定に至ったか)
 
         --- 最終出力 ---
-        - **DECISION:** (私がどう考え、決断したかを記述)
-        - **ACTION:** (私が次に行う具体的な行動を記述)
-        - **NUANCE:** (応答の際の、観察可能な非言語的な態度や雰囲気を簡潔に記述。例:「少し考え込むように」「静かに頷き」)
-        - **DIALOGUE:** (ユーザーへの発話内容のみを「」で括って記述。地の文は含めない)
-        - **BEHAVIOR:** (発話に伴う、客観的に観測可能な物理的行動を記述。例:「PCに向き直り、キーボードを叩き始めた」)
+        - **DECISION:** (私がどう考え、決断したか)
+        - **ACTION:** (私が次に行う具体的な行動)
+        - **NUANCE:** (応答の際の、観察可能な非言語的な態度や雰囲気)
+        - **DIALOGUE:** (ユーザーへの発話内容)
+        - **BEHAVIOR:** (発話に伴う、客観的に観測可能な物理的行動)
         """
 
         prompt = "上記の指示と入力情報に従って、思考プロセスを実行し、指定された出力形式で応答を生成してください。"
 
-        raw_response = self.lm.generate_response(
+        resp = self.lm.generate_response(
             query=prompt,
             context=context,
-            model="gemma-3-1b-it"
+            temperature=0.2
         )
+        raw_response = extract_answer_or_default(resp)
         print(f"「LLMの回答」@@@\n{raw_response}\n@@@")
 
         try:

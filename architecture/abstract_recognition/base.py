@@ -3,6 +3,7 @@ from lm_studio_rag.storage import RAGStorage
 from lm_studio_rag.lm_studio_client import LMStudioClient
 from . import schama_architecture as schama
 from typing import List, Optional, Dict, Any
+from utils.lm_response_helper import extract_answer_or_default
 
 def artechture_base(storage: RAGStorage, field_info_input: str) -> Optional[schama.abstract_recognition_response]:
     # この体験とフィールド情報を組み合わせて推論を行います。
@@ -19,11 +20,15 @@ def artechture_base(storage: RAGStorage, field_info_input: str) -> Optional[scha
     # result_schama = schama.abstract_recognition_response()
     
     question_query:str = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような感情の動きをするのかを予測してください。"
-    emostion_result:str = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
-    question_query:str = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような思考をするのかを予測してくだい。"
-    think_result:str = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.","gemma-3-1b-it")
-    print("RAG answer:\n", emostion_result)
-    print("RAG answer:\n", think_result)
+    emostion_resp: Dict[str, Any] = lm.generate_response(question_query, context_texts if context_texts else "No relevant context found.")
+    emostion_result: str = extract_answer_or_default(emostion_resp)
+    
+    question_query_think:str = "「context_field_info」に書かれている状況において「context_experience」のような体験をしてきた人はどのような思考をするのかを予測してくだい。"
+    think_resp: Dict[str, Any] = lm.generate_response(question_query_think, context_texts if context_texts else "No relevant context found.")
+    think_result: str = extract_answer_or_default(think_resp)
+    
+    print("RAG answer (emotion):\n", emostion_result)
+    print("RAG answer (think):\n", think_result)
 
     
     try:

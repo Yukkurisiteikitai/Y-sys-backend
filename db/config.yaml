@@ -1,0 +1,21 @@
+# 設定のメモ
+# *   **Low (低)**:
+#     *   **定義**: 一般的に公開されても問題がなく、個人的なリスクや不快感をほとんど伴わない情報だ。カジュアルな会話や自己紹介で頻繁に共有されるような内容が含まれる。
+#     *   **例**: **趣味・興味関心** (`hobbies_interests`) [初期会話]。
+# *   **Medium (中)**:
+#     *   **定義**: 個人的な情報ではあるが、特定の文脈（例えば、親しい友人との会話や自己改善の議論）であれば比較的開示されやすい内容。不特定多数に公開されると多少の抵抗や不快感があるかもしれないが、深刻なリスクには繋がりにくい。
+#     *   **例**: **影響を受けた周囲の人々** (`influential_people`)、**性格の特徴** (`personality_traits`)、**対人関係のスタイル** (`interpersonal_style`)、**理想・夢・自己実現欲求** (`aspirations_dreams`)、**言動の癖と現れる思考** (`verbal_nonverbal_tics_indicated_thoughts`)、**対立時の対応スタイル** (`conflict_resolution_style`) [初期会話]。
+# *   **High (高)**:
+#     *   **定義**: 個人の深い内面や判断基準に関わる情報であり、他者に知られることに対して強い抵抗感を持つ可能性がある内容だ。不適切に共有された場合、個人的な評価に影響を与えたり、不利益を被る可能性も出てくる。
+#     *   **例**: **信念・価値観** (`beliefs_values`)、**感情の反応パターン** (`emotional_reaction_patterns`)、**過去の失敗と学び** (`past_failures_learnings`)、**行動パターンと根底欲求** (`behavioral_patterns_underlying_needs`)、**思考プロセス・思考の癖** (`thought_processes_cognitive_biases`)、**対人関係の歴史と変化への対応** (`relationship_history_adaptation`)、**将来への不安と希望** (`future_outlook_anxieties_hopes`) [初期会話]。
+# *   **Very High (非常に高)**:
+#     *   **定義**: ユーザーの極めてプライベートな側面や、深い心理的脆弱性に関わる情報だ。開示には細心の注意が必要であり、誤った取り扱いはユーザーに大きな心理的負担や、場合によっては社会的な不利益をもたらす危険性がある。
+#     *   **例**: **幼少期の重要体験** (`significant_childhood_experiences`)、**内面の葛藤と対処** (`internal_conflicts_coping`)、**感情のトリガー** (`emotional_triggers`)、**価値観の変遷と契機** (`evolution_of_values_turning_points`)、**自己認識と自己肯定感** (`self_perception_self_esteem`) [初期会話]。
+# *   **Extremely High (極めて高)**:
+#     *   **定義**: **最もデリケートな情報であり、心的外傷（トラウマ）となりうる具体的な体験そのもの、またはそれに直接関連する内容が該当する** [初期会話, 183]。システムの最厳重な保護下で扱われるべきであり、いかなる場合もユーザーの安全とプライバシーが最優先される。このレベルの情報は、`is_trauma_event: true`が設定されたエピソードデータに対して**自動的に付与される**。
+#     *   **例**: **内面のコンプレックス・トラウマ** (`inner_complexes_traumas`) [初期会話]。特に、具体的なトラウマ・イベントの記述や、それに伴うフラッシュバック、強迫観念、喪失感など、ユーザーの精神状態に深刻な影響を及ぼす内容だ。
+safety_level: "HIGH" # Noting（完全自己責任), LOW（最低限度）, MEDIUM（配慮されだす）, HIGH（箱庭状態）
+Sensitives_block_objects: 
+  Drugs: false #  "薬物"
+Data_retention_period_day: 209 #日程単位
+Emotion_Analysis_via_Camera: true #カメラを利用した感情分析をオンにする
